@@ -1,0 +1,9 @@
+{
+  "name": "@jianzi/web",
+  "dependencies": {
+    "@jianzi/core": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "latest"
+  }
+}
