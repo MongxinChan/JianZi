@@ -35,9 +35,10 @@ build/
 .DS_Store
 Thumbs.db
 # For VSCode
-.vscode/*
-!.vscode/settings.json    # 开源项目建议保留 settings.json 以统一 Lint 规范
-!.vscode/extensions.json  # 建议保留插件推荐
+!.vscode/settings.json    
+# 开源项目建议保留 settings.json 以统一 Lint 规范
+!.vscode/extensions.json  
+# 建议保留插件推荐
 .history/
 .idea/
 
