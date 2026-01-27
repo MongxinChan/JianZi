@@ -6,3 +6,6 @@ export * from './Stage.ts';
 
 // 导出排版引擎，处理文字的几何计算
 export * from './Layout.ts';
+
+// 导出
+export { Renderer } from './Renderer';
