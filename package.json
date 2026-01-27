@@ -1,13 +1,17 @@
 {
-  "name": "Jianzi",
+  "name": "jianzi",
+  "private": true, 
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "一个追求人文美学的书信排版引擎",
+  "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm --filter @jianzi/web dev",
+    "build:core": "pnpm --filter @jianzi/core build",
+    "lint": "eslint packages/**/src/*.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.28.1"
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
+  }
 }

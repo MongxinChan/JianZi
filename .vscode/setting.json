@@ -1,0 +1,20 @@
+{
+    "cSpell.words": [
+        "arcoblue",
+        "COMPAT",
+        "pako",
+        "pnpm",
+        "rspack",
+        "TSON",
+        "undoable",
+        "webrtc"
+    ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always" 
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
