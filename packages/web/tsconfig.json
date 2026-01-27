@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler", // 或者 "node16" / "nodenext"
+    "allowImportingTsExtensions": true, 
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "paths": {
+      "@jianzi/core": ["../core/src/index.ts"] 
+    },
+    "ignoreDeprecations": "5.0" 
+  },
+  "include": [
+    "src/**/*",
+    "../core/src/**/*"
+  ]
+}

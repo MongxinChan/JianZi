@@ -1,9 +1,14 @@
 {
   "name": "@jianzi/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite" 
+  },
   "dependencies": {
     "@jianzi/core": "workspace:*"
   },
   "devDependencies": {
-    "vite": "latest"
+    "vite": "^6.0.0"
   }
 }
