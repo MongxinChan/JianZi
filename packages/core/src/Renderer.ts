@@ -40,6 +40,24 @@ export class Renderer {
   }
 
   /**
+   * 暴露 Canvas 元素给上层 (解决 exportImage 报错)
+   * 这一步是为了让 Editor 能拿到 DOM 节点去生成图片
+   */
+  public getCanvas(): HTMLCanvasElement {
+    return this.stage.getCanvas();
+  }
+
+  /**
+   * 动态更新配置 (解决 updateOptions 报错)
+   * 当用户拖动 PADDING 滑块时，这个方法会被调用
+   */
+  public updateOptions(options: JianZiOptions): void {
+    this.options = options;
+    // 通知 Stage 更新尺寸（如果宽高变了）
+    this.stage.updateOptions(options); 
+  }
+
+  /**
    * 绘制底色/纸张感
    */
   private drawPaper(): void {
