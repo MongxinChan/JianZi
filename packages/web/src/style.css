@@ -1,0 +1,95 @@
+/* packages/web/src/style.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500&display=swap');
+
+:root {
+  --font-serif: "Noto Serif SC", "STKaiti", "KaiTi", serif;
+}
+
+#app canvas {
+  /* 确保 Canvas 渲染平滑 */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+body {
+  margin: 0;
+  background-color: #fcfcfc;
+  color: #1a1a1a;
+  font-family: 'Inter', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.loners-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* 左侧导航：仿博客侧边栏 */
+.side-nav {
+  width: 200px;
+  padding: 40px;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.brand h1 {
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.actions {
+  list-style: none;
+  padding: 0;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+.actions li {
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.actions li:hover {
+  opacity: 0.5;
+}
+
+/* 主舞台：Canvas 居中悬浮 */
+.viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f7f7f7; /* 略深于画布，产生对比 */
+}
+
+.canvas-stage {
+  padding: 0;
+  background: #fff;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.06); /* 深度感 */
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.canvas-stage:hover {
+  transform: translateY(-5px); /* 微小的悬浮交互 */
+}
+
+/* 右侧属性：极简无边框 */
+.property-panel {
+  width: 240px;
+  padding: 40px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.prop-section h3 {
+  border-bottom: 1px solid #1a1a1a;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  font-size: 12px;
+}

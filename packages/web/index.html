@@ -1,2 +1,43 @@
-<div id="app"></div>
-<script type="module" src="/src/main.ts"></script>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>笺字 | JianZi</title>
+</head>
+<body>
+    <div class="loners-layout">
+        <nav class="side-nav">
+            <div class="brand">
+                <h1>笺字</h1>
+                <span>JIAN ZI</span>
+            </div>
+            <ul class="actions">
+                <li id="export">EXPORT</li>
+                <li id="clear">CLEAR</li>
+                <li id="info">INFO</li>
+            </ul>
+        </nav>
+
+        <main class="viewport">
+            <div class="canvas-stage">
+                <div id="app"></div> 
+            </div>
+        </main>
+
+        <aside class="property-panel">
+            <section class="prop-section">
+                <h3>LAYOUT</h3>
+                <div class="control">
+                    <span>PADDING</span>
+                    <input type="range" id="padding" min="20" max="100" value="60">
+                </div>
+                <div class="control">
+                    <span>GRID ALPHA</span>
+                    <input type="range" id="grid-opacity" min="0" max="1" step="0.1" value="0.2">
+                </div>
+            </section>
+        </aside>
+    </div>
+    <script type="module" src="/src/index.ts"></script>
+</body>
+</html>
