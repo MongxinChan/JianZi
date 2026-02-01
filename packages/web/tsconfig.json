@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "moduleResolution": "bundler", // 或者 "node16" / "nodenext"
-    "allowImportingTsExtensions": true, 
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "types": ["vite/client"], 
     "paths": {
-      "@jianzi/core": ["../core/src/index.ts"] 
+      "@jianzi/core": ["../core/src/index.ts"]
     },
-    "ignoreDeprecations": "5.0" 
+    "ignoreDeprecations": "5.0"
   },
   "include": [
     "src/**/*",
