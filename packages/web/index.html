@@ -1,50 +1,127 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <title>笺字 | JianZi</title>
 </head>
+
 <body>
-    <div class="loners-layout">
-        <nav class="side-nav">
-            <div class="brand">
-                <h1>笺字</h1>
-                <span>JIAN ZI</span>
+    <div class="editor-layout">
+        <!-- 1. Header: Global Actions -->
+        <header class="editor-header">
+            <div class="header-left">
+                <div class="brand">JianZi</div>
+                <div class="menu-bar">
+                    <button class="menu-item">文件 File</button>
+                    <button class="menu-item">编辑 Edit</button>
+                    <button class="menu-item">视图 View</button>
+                </div>
             </div>
-            <ul class="actions">
-                <li id="export">EXPORT</li>
-                <li id="clear">CLEAR</li>
-                <li id="info">INFO</li>
-            </ul>
-        </nav>
-
-        <main class="viewport">
-            <div class="canvas-stage">
-                <div id="app"></div> 
+            <div class="header-right">
+                <button id="export" class="action-btn primary">导出 Export</button>
+                <a href="https://github.com/MongxinChan/JianZi" target="_blank" class="github-link">GitHub</a>
             </div>
-        </main>
+        </header>
 
-        <aside class="property-panel">
-            <section class="prop-section">
-                <h3>LAYOUT</h3>
-                <div class="control">
-                    <span>PADDING</span>
-                    <input type="range" id="padding" min="20" max="100" value="60">
+        <!-- 2. Main Body -->
+        <div class="editor-body">
+            <!-- Left Toolbar -->
+            <aside class="left-toolbar">
+                <div class="tool-btn active" title="Select">
+                    <span class="icon">Ref</span>
                 </div>
-                <div class="control">
-                    <span>GRID ALPHA</span>
-                    <input type="range" id="grid-opacity" min="0" max="1" step="0.1" value="0.2">
+                <div class="tool-btn" title="Text">
+                    <span class="icon">T</span>
                 </div>
-                <div class="control">
-                    <span>MODE</span>
-                    <select id="layout-mode" style="width: 100px; padding: 5px;">
-                        <option value="vertical">Vertical</option>
-                        <option value="horizontal">Horizontal</option>
-                    </select>
+                <div class="tool-btn" title="Image">
+                    <span class="icon">Img</span>
                 </div>
-            </section>
-        </aside>
+                <div class="tool-item-divider"></div>
+                <div class="tool-btn" id="clear" title="Clear">
+                    <span class="icon">×</span>
+                </div>
+            </aside>
+
+            <!-- Center Viewport -->
+            <main class="viewport">
+                <div class="canvas-container">
+                    <div id="app"></div>
+                </div>
+            </main>
+
+            <!-- Right Property Panel -->
+            <aside class="right-properties">
+                <!-- Panel Header -->
+                <div class="panel-header">
+                    <span>属性 Properties</span>
+                </div>
+
+                <div class="panel-content">
+                    <!-- Canvas Size Section -->
+                    <div class="prop-group">
+                        <div class="group-title">画布 Canvas</div>
+                        <div class="prop-row">
+                            <label>预设 Preset</label>
+                            <div class="chip-list">
+                                <button class="chip" data-w="595" data-h="842">A4</button>
+                                <button class="chip" data-w="390" data-h="844">Phone</button>
+                            </div>
+                        </div>
+                        <div class="prop-row">
+                            <label>W</label>
+                            <input type="number" id="canvas-width" class="input-sm" value="500">
+                        </div>
+                        <div class="prop-row">
+                            <label>H</label>
+                            <input type="number" id="canvas-height" class="input-sm" value="700">
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Layout Section -->
+                    <div class="prop-group">
+                        <div class="group-title">排版 Layout</div>
+                        <div class="prop-row">
+                            <label>模式 Mode</label>
+                            <div class="radio-cards">
+                                <label class="radio-card">
+                                    <input type="radio" name="layout-mode" value="vertical" checked>
+                                    <span>竖排</span>
+                                </label>
+                                <label class="radio-card">
+                                    <input type="radio" name="layout-mode" value="horizontal">
+                                    <span>横排</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="prop-row">
+                            <label>边距 Padding</label>
+                            <div class="slider-container">
+                                <input type="range" id="padding" min="20" max="100" value="60">
+                                <span class="value-display">60</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Grid Section -->
+                    <div class="prop-group">
+                        <div class="group-title">网格 Grid</div>
+                        <div class="prop-row">
+                            <label>透明度 Opacity</label>
+                            <div class="slider-container">
+                                <input type="range" id="grid-opacity" min="0" max="1" step="0.1" value="0.2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
     <script type="module" src="/src/index.ts"></script>
 </body>
+
 </html>

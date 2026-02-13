@@ -18,15 +18,7 @@ const jianzi = new Editor({
 // 2. 模拟初始文字
 jianzi.setValue("以此为凭，书写寂静。我在这寂静中，发现了自己的力量。");
 
-// 3. 页面淡入动画 (你原本写的逻辑，保留)
-const stage = document.querySelector('.canvas-stage') as HTMLElement;
-if (stage) {
-  stage.style.opacity = '0';
-  setTimeout(() => {
-    stage.style.transition = 'opacity 1s ease';
-    stage.style.opacity = '1';
-  }, 100);
-}
+
 
 // [导出功能]
 document.querySelector('#export')?.addEventListener('click', () => {
@@ -62,6 +54,9 @@ document.querySelector('#padding')?.addEventListener('input', (e) => {
   const target = e.target as HTMLInputElement;
   // 实时更新配置
   jianzi.updateOptions({ padding: parseInt(target.value) });
+  // 更新 UI 显示数值
+  const display = target.nextElementSibling;
+  if (display) display.textContent = target.value;
 });
 
 // [布局联动：格线透明度]
@@ -76,8 +71,41 @@ document.querySelector('#grid-opacity')?.addEventListener('input', (e) => {
 });
 
 // [布局联动：排版模式]
-document.querySelector('#layout-mode')?.addEventListener('change', (e) => {
-  const target = e.target as HTMLSelectElement;
-  const mode = target.value as 'vertical' | 'horizontal';
-  jianzi.updateOptions({ mode });
+const radioInputs = document.querySelectorAll('input[name="layout-mode"]');
+radioInputs.forEach(input => {
+  input.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (target.checked) {
+      const mode = target.value as 'vertical' | 'horizontal';
+      jianzi.updateOptions({ mode });
+    }
+  });
+});
+
+// [画布尺寸：自定义输入]
+const widthInput = document.querySelector('#canvas-width') as HTMLInputElement;
+const heightInput = document.querySelector('#canvas-height') as HTMLInputElement;
+
+const updateCanvasSize = () => {
+  const width = parseInt(widthInput.value) || 500;
+  const height = parseInt(heightInput.value) || 700;
+  jianzi.updateOptions({ width, height });
+};
+
+widthInput?.addEventListener('change', updateCanvasSize);
+heightInput?.addEventListener('change', updateCanvasSize);
+
+// [画布尺寸：预设按钮]
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const w = target.getAttribute('data-w');
+    const h = target.getAttribute('data-h');
+
+    if (w && h) {
+      widthInput.value = w;
+      heightInput.value = h;
+      updateCanvasSize();
+    }
+  });
 });
