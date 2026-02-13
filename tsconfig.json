@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
     "paths": {
-      "@jianzi/core": ["./packages/core/src/index.ts"],
-      "@jianzi/core/*": ["./packages/core/src/*"]
+      "@jianzi/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@jianzi/core/*": [
+        "./packages/core/src/*"
+      ]
     },
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

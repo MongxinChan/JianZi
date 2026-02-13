@@ -12,7 +12,7 @@ const jianzi = new Editor({
   padding: 60,
   grid: { type: 'line', color: '#cc0000', opacity: 0.2 },
   // 建议加上字体设置，否则默认黑体不好看
-  defaultFont: "28px 'STKaiti', 'KaiTi', serif" 
+  defaultFont: "28px 'STKaiti', 'KaiTi', serif"
 });
 
 // 2. 模拟初始文字
@@ -33,12 +33,12 @@ document.querySelector('#export')?.addEventListener('click', () => {
   console.log("点击了导出..."); // 方便调试
   try {
     const dataUrl = jianzi.exportImage();
-    
+
     // 创建一个临时的下载链接
     const link = document.createElement('a');
     link.download = `jianzi-${Date.now()}.png`;
     link.href = dataUrl;
-    
+
     // 必须加入文档流才能点击生效
     document.body.appendChild(link);
     link.click();
@@ -68,9 +68,16 @@ document.querySelector('#padding')?.addEventListener('input', (e) => {
 document.querySelector('#grid-opacity')?.addEventListener('input', (e) => {
   const target = e.target as HTMLInputElement;
   const currentGrid = jianzi.getOptions().grid || { type: 'line', color: '#cc0000' };
-  
+
   // 深度合并 grid 对象
-  jianzi.updateOptions({ 
-    grid: { ...currentGrid, opacity: parseFloat(target.value) } 
+  jianzi.updateOptions({
+    grid: { ...currentGrid, opacity: parseFloat(target.value) }
   });
+});
+
+// [布局联动：排版模式]
+document.querySelector('#layout-mode')?.addEventListener('change', (e) => {
+  const target = e.target as HTMLSelectElement;
+  const mode = target.value as 'vertical' | 'horizontal';
+  jianzi.updateOptions({ mode });
 });

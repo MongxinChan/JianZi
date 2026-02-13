@@ -28,12 +28,24 @@ export class Renderer {
     this.drawPaper();
 
     // 3. 计算排版坐标
-    const nodes = Layout.calculateVertical(
-      text,
-      this.options.width,
-      this.options.height,
-      this.options.padding,
-    );
+    let nodes: RenderNode[];
+
+    if (this.options.mode === 'horizontal') {
+      nodes = Layout.calculateHorizontal(
+        text,
+        this.options.width,
+        this.options.height,
+        this.options.padding,
+      );
+    } else {
+      // 默认为 vertical
+      nodes = Layout.calculateVertical(
+        text,
+        this.options.width,
+        this.options.height,
+        this.options.padding,
+      );
+    }
 
     // 4. 执行字符绘制
     this.drawText(nodes);
@@ -54,7 +66,7 @@ export class Renderer {
   public updateOptions(options: JianZiOptions): void {
     this.options = options;
     // 通知 Stage 更新尺寸（如果宽高变了）
-    this.stage.updateOptions(options); 
+    this.stage.updateOptions(options);
   }
 
   /**
@@ -71,7 +83,7 @@ export class Renderer {
    */
   private drawText(nodes: RenderNode[]): void {
     const { ctx } = this.stage;
-    
+
     // 设置字体美学属性
     ctx.font = `${this.options.defaultFont || "28px 'STKaiti', 'KaiTi', serif"}`;
     ctx.fillStyle = '#2c3e50'; // 沉稳的墨色

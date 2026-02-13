@@ -44,10 +44,10 @@ export class Editor {
   public updateOptions(newOptions: Partial<JianZiOptions>): void {
     // 1. 合并新旧配置
     this.options = { ...this.options, ...newOptions };
-    
+
     // 2. 通知底层引擎更新（例如改变了 PADDING 或 格线透明度）
     this.renderer.updateOptions(this.options);
-    
+
     // 3. 立即重绘以反映变化
     this.refresh();
   }
