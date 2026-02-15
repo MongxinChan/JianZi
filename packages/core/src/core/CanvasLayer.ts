@@ -1,5 +1,6 @@
 import { JianZiOptions } from '../types';
 import { DeltaSet } from '../model/DeltaSet';
+import { TextDelta, type LayoutMode } from '../model/Delta';
 
 export class CanvasLayer {
     private canvas: HTMLCanvasElement;
@@ -34,7 +35,7 @@ export class CanvasLayer {
         container.appendChild(this.canvas);
     }
 
-    public render(deltas: DeltaSet) {
+    public render(deltas: DeltaSet, mode: LayoutMode = 'horizontal') {
         // Clear
         this.ctx.clearRect(0, 0, this.width, this.height);
 
@@ -44,9 +45,11 @@ export class CanvasLayer {
 
         // Draw Deltas
         deltas.forEach(delta => {
-            // Only draw delta text content
-            // @ts-ignore
-            delta.draw(this.ctx);
+            if (delta instanceof TextDelta) {
+                delta.draw(this.ctx, mode, this.width, this.height);
+            } else {
+                delta.draw(this.ctx);
+            }
         });
     }
 

@@ -48,6 +48,8 @@ export abstract class Delta {
     }
 }
 
+export type LayoutMode = 'vertical' | 'horizontal';
+
 export class TextDelta extends Delta {
     public content: string;
     public fontFamily: string;
@@ -61,42 +63,114 @@ export class TextDelta extends Delta {
         this.fontFamily = attr.fontFamily || 'serif';
         this.fontSize = attr.fontSize || 28;
         this.lineHeight = 1.5;
-        this.letterSpacing = 0;
+        this.letterSpacing = 2;
     }
 
-    measure(ctx: CanvasRenderingContext2D): { width: number; height: number } {
-        ctx.save();
-        ctx.font = `${this.fontSize}px ${this.fontFamily}`;
-        const metrics = ctx.measureText(this.content);
-        ctx.restore();
+    /**
+     * Calculate character positions for both modes.
+     * Returns positions array and the bounding box dimensions.
+     */
+    private _layout(
+        mode: LayoutMode,
+        areaWidth: number,
+        areaHeight: number,
+    ): { positions: { char: string; cx: number; cy: number }[]; totalWidth: number; totalHeight: number } {
+        const charSize = this.fontSize;
+        const cellH = charSize * this.lineHeight;
+        const cellW = charSize + this.letterSpacing;
+        const chars = this.content.split('');
+        const positions: { char: string; cx: number; cy: number }[] = [];
+
+        if (mode === 'vertical') {
+            // 竖排: top→bottom in each column, columns flow right→left
+            const maxRows = Math.max(1, Math.floor((areaHeight - this.y) / cellH));
+            let col = 0;
+            let row = 0;
+
+            for (const ch of chars) {
+                // Column x: starts from left, each new column goes to the right
+                // Actually traditional vertical is right-to-left, but since we start from this.x,
+                // let's place first column at this.x and go LEFT. We'll adjust later.
+                const cx = -col * cellW; // relative offset (will be adjusted)
+                const cy = row * cellH;  // relative offset
+                positions.push({ char: ch, cx, cy });
+
+                row++;
+                if (row >= maxRows) {
+                    row = 0;
+                    col++;
+                }
+            }
+
+            const totalCols = col + (row > 0 ? 1 : 0);
+            const totalRows = totalCols === 1 ? chars.length : maxRows;
+            return {
+                positions,
+                totalWidth: totalCols * cellW,
+                totalHeight: Math.min(totalRows, chars.length) * cellH,
+            };
+        } else {
+            // 横排: left→right in each row, rows flow top→bottom
+            const maxCols = Math.max(1, Math.floor((areaWidth - this.x) / cellW));
+            let col = 0;
+            let row = 0;
+
+            for (const ch of chars) {
+                const cx = col * cellW;
+                const cy = row * cellH;
+                positions.push({ char: ch, cx, cy });
+
+                col++;
+                if (col >= maxCols) {
+                    col = 0;
+                    row++;
+                }
+            }
+
+            const totalRows = row + (col > 0 ? 1 : 0);
+            const totalCols = totalRows === 1 ? chars.length : maxCols;
+            return {
+                positions,
+                totalWidth: Math.min(totalCols, chars.length) * cellW,
+                totalHeight: totalRows * cellH,
+            };
+        }
+    }
+
+    measure(ctx: CanvasRenderingContext2D, mode: LayoutMode = 'horizontal', areaWidth: number = 9999, areaHeight: number = 9999): { width: number; height: number } {
+        const layout = this._layout(mode, areaWidth, areaHeight);
         return {
-            width: metrics.width,
-            height: this.fontSize * this.lineHeight, // Simple height
+            width: layout.totalWidth,
+            height: layout.totalHeight,
         };
     }
 
-    draw(ctx: CanvasRenderingContext2D) {
+    draw(ctx: CanvasRenderingContext2D, mode: LayoutMode = 'horizontal', areaWidth: number = 9999, areaHeight: number = 9999) {
         ctx.save();
         ctx.font = `${this.fontSize}px ${this.fontFamily}`;
         ctx.textBaseline = 'top';
+        ctx.textAlign = 'left';
         ctx.fillStyle = '#2c3e50';
 
-        // Update dimensions on draw (lazy update)
-        // ideally we update this on content change
-        const size = this.measure(ctx);
-        this.width = size.width;
-        this.height = size.height;
+        const layout = this._layout(mode, areaWidth, areaHeight);
 
-        // Simple rendering for now (no wrapping)
-        ctx.fillText(this.content, this.x, this.y);
+        // Update bounding box
+        this.width = layout.totalWidth;
+        this.height = layout.totalHeight;
 
-        // Draw selection box if selected
-        if (this.selected) {
-            ctx.strokeStyle = '#1890ff';
-            ctx.lineWidth = 1;
-            // Pad the selection box slightly
-            const padding = 4;
-            ctx.strokeRect(this.x - padding, this.y - padding, this.width + padding * 2, this.height + padding * 2);
+        if (mode === 'vertical') {
+            // For vertical: first column starts at right edge of bounding box
+            // cx is negative offset from the right edge
+            for (const pos of layout.positions) {
+                const drawX = this.x + this.width + pos.cx - (this.fontSize + this.letterSpacing);
+                const drawY = this.y + pos.cy;
+                ctx.fillText(pos.char, drawX, drawY);
+            }
+        } else {
+            // Horizontal: straightforward
+            for (const pos of layout.positions) {
+                ctx.fillText(pos.char, this.x + pos.cx, this.y + pos.cy);
+            }
         }
 
         ctx.restore();

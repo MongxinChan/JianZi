@@ -201,7 +201,8 @@ export class Editor {
   }
 
   public refresh(): void {
-    this.layerManager.render(this.deltas);
+    const mode = this.options.mode || 'vertical';
+    this.layerManager.render(this.deltas, mode);
     // Draw interaction layer (Selection box)
     this.layerManager.interactionLayer.clear();
     const selectedDelta = this.selectedDeltaId ? this.deltas.get(this.selectedDeltaId) : null;
@@ -239,4 +240,5 @@ export class Editor {
     }
     return '';
   }
+
 }

@@ -2,6 +2,7 @@ import { JianZiOptions } from '../types';
 import { CanvasLayer } from './CanvasLayer';
 import { InteractionLayer } from './InteractionLayer';
 import { DeltaSet } from '../model/DeltaSet';
+import type { LayoutMode } from '../model/Delta';
 
 export class LayerManager {
     public canvasLayer: CanvasLayer;
@@ -26,8 +27,8 @@ export class LayerManager {
         return this.container;
     }
 
-    public render(deltas: DeltaSet) {
-        this.canvasLayer.render(deltas);
+    public render(deltas: DeltaSet, mode: LayoutMode = 'horizontal') {
+        this.canvasLayer.render(deltas, mode);
     }
 
     public resize(width: number, height: number) {
