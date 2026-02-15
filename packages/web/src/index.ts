@@ -1,5 +1,6 @@
 import { Editor } from '@jianzi/core';
 import './style.css';
+// HMR Trigger
 
 // 1. 初始化编辑器核心
 const container = document.querySelector('#app');
