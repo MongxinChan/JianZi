@@ -336,8 +336,8 @@ export class TextDelta extends Delta {
      * Actually x,y passed should be absolute canvas coordinates?
      * Yes.
      */
-    public getCharIndexAt(ctx: CanvasRenderingContext2D, x: number, y: number, mode: LayoutMode): number {
-        const layout = this._layout(mode, 9999, 9999); // Todo: pass actual area?
+    public getCharIndexAt(ctx: CanvasRenderingContext2D, x: number, y: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): number {
+        const layout = this._layout(mode, areaWidth, areaHeight);
         // For simplicity, we assume hitting anywhere inside the char box returns its index.
         const localX = x - this.x;
         const localY = y - this.y;
@@ -393,8 +393,8 @@ export class TextDelta extends Delta {
      * Get rectangles for a range of characters.
      * Used for drawing selection highlight.
      */
-    public getRectsForRange(ctx: CanvasRenderingContext2D, start: number, end: number, mode: LayoutMode): { x: number; y: number; width: number; height: number }[] {
-        const layout = this._layout(mode, 9999, 9999);
+    public getRectsForRange(ctx: CanvasRenderingContext2D, start: number, end: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): { x: number; y: number; width: number; height: number }[] {
+        const layout = this._layout(mode, areaWidth, areaHeight);
         const rects: { x: number; y: number; width: number; height: number }[] = [];
 
         // Clamp

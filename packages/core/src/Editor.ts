@@ -179,7 +179,9 @@ export class Editor {
         const idx = hitDelta.getCharIndexAt(
           // @ts-ignore
           this.layerManager.canvasLayer.ctx,
-          x, y, this.options.mode || 'vertical'
+          x, y, this.options.mode || 'vertical',
+          this.layerManager.canvasLayer.width,
+          this.layerManager.canvasLayer.height
         );
         if (idx !== -1) {
           isSelectingText = true;
@@ -298,7 +300,9 @@ export class Editor {
           const idx = delta.getCharIndexAt(
             // @ts-ignore
             this.layerManager.canvasLayer.ctx,
-            x, y, this.options.mode || 'vertical'
+            x, y, this.options.mode || 'vertical',
+            this.layerManager.canvasLayer.width,
+            this.layerManager.canvasLayer.height
           );
           if (idx !== -1) {
             this.selectionRange.end = idx;

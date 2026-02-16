@@ -261,7 +261,9 @@ const bindToolbar = () => {
             ctx,
             Math.min(range.start, range.end),
             Math.max(range.start, range.end),
-            mode
+            mode,
+            jianzi.getOptions().width,
+            jianzi.getOptions().height
           );
 
 
