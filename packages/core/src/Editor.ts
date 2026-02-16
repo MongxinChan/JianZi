@@ -1,9 +1,9 @@
-// packages/core/src/Editor.ts
 import { JianZiOptions } from './types';
 import { DeltaSet } from './model/DeltaSet';
 import { Delta, TextDelta, ImageDelta } from './model/Delta';
 import { LayerManager } from './core/LayerManager';
 import { InteractionLayer } from './core/InteractionLayer';
+import { applyStyleToContent, CharStyle } from './model/RichText';
 
 /**
  * 编辑器交互类：负责处理用户输入、状态管理与渲染同步
@@ -438,5 +438,23 @@ export class Editor {
     this.selectedDeltaId = imgDelta.id;
     imgDelta.selected = true;
     this.refresh();
+  }
+
+  public applyStyleToSelection(style: Partial<CharStyle>): void {
+    if (this.selectedDeltaId && this.selectionRange) {
+      const delta = this.deltas.get(this.selectedDeltaId);
+      if (delta instanceof TextDelta) {
+        const { start, end } = this.selectionRange;
+        // Selection is inclusive of character boxes.
+        // applyStyleToContent expects exclusive end index for slice logic.
+        const s = Math.min(start, end);
+        const e = Math.max(start, end) + 1;
+
+        delta.fragments = applyStyleToContent(
+          delta.fragments, s, e, style
+        );
+        this.refresh();
+      }
+    }
   }
 }
