@@ -10,12 +10,12 @@ import { applyStyleToContent, CharStyle } from './model/RichText';
  */
 export class Editor {
   private layerManager: LayerManager;
-  private deltas: DeltaSet;
+  public deltas: DeltaSet;
   private options: JianZiOptions;
   // TODO: Select/Input logic will be moved to InteractionLayer later
   private inputElement: HTMLTextAreaElement | null = null;
-  private selectedDeltaId: string | null = null;
-  private selectionRange: { start: number; end: number } | null = null;
+  public selectedDeltaId: string | null = null;
+  public selectionRange: { start: number; end: number } | null = null;
   private currentFont: string = "'STKaiti', 'KaiTi', serif";
 
   constructor(options: JianZiOptions) {

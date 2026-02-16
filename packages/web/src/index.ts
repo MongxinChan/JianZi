@@ -86,43 +86,25 @@ document.getElementById('style-bg-clear')?.addEventListener('click', () => {
   jianzi.applyStyleToSelection({ background: undefined });
 });
 
+
 document.getElementById('style-bold')?.addEventListener('click', () => {
-  // Toggle bold? We don't know current state easily without inspection.
-  // For now, let's just APPLY bold. Toggle requires reading state.
-  // User requested "Bold/Italic/Underline buttons".
-  // I'll implement as "Apply Bold". If user wants Normal, they need "Clear Style" or "Unbold"?
-  // Or I can check if I can get selection style.
-  // For now: Simple Apply 'bold'.
-  // Better: Toggle logic if I can.
-  // Let's stick to "Apply Bold" for this pass.
-  // Wait, simple toggle logic:
-  // We can't easily know if mixed.
-  // Let's make it ALWAYS SET BOLD for now.
-  // And maybe a "Normal" button? Or "B" toggles between 'bold' and 'normal'?
-  // Let's make it toggle blindly? No, explicit is better.
-  // Let's set fontWeight: 'bold'.
-  jianzi.applyStyleToSelection({ fontWeight: 'bold' });
+  const currentStyle = jianzi.getSelectionStyle();
+  const isBold = currentStyle?.fontWeight === 'bold';
+  jianzi.applyStyleToSelection({ fontWeight: isBold ? 'normal' : 'bold' });
 });
-// Add a "Normal Weight" option? Or make it a toggle?
-// I'll add listeners for others.
 
 document.getElementById('style-italic')?.addEventListener('click', () => {
-  // Italic isn't in CharStyle yet!
-  // CharStyle has: color, fontSize, fontFamily, fontWeight, background, underline, lineThrough.
-  // No 'fontStyle'.
-  // I should add 'fontStyle' to CharStyle in Phase 1?
-  // I missed it.
-  // I'll skip Italic for now or add it to RichText.ts.
-  // I'll skip Italic button logic or make it log "Not implemented".
-  console.log('Italic not implemented yet');
+  const currentStyle = jianzi.getSelectionStyle();
+  const isItalic = currentStyle?.fontStyle === 'italic';
+  jianzi.applyStyleToSelection({ fontStyle: isItalic ? 'normal' : 'italic' });
 });
 
 document.getElementById('style-underline')?.addEventListener('click', () => {
-  jianzi.applyStyleToSelection({ underline: true });
-  // How to remove?
-  // Need a toggle or "Clear Formatting".
-  // For now: Apply.
+  const currentStyle = jianzi.getSelectionStyle();
+  const isUnderline = !!currentStyle?.underline;
+  jianzi.applyStyleToSelection({ underline: !isUnderline });
 });
+
 
 // [布局联动：格线透明度]
 document.querySelector('#grid-opacity')?.addEventListener('input', (e) => {
@@ -204,3 +186,103 @@ const fontSelect = document.querySelector('#font-family') as HTMLSelectElement;
 fontSelect?.addEventListener('change', () => {
   jianzi.setFont(fontSelect.value);
 });
+
+// [Floating Toolbar Logic]
+const floatingToolbar = document.getElementById('floating-toolbar');
+const bindToolbar = () => {
+  if (!floatingToolbar) return;
+
+  // Bind Buttons
+  floatingToolbar.querySelector('#ft-bold')?.addEventListener('click', () => {
+    const currentStyle = jianzi.getSelectionStyle();
+    const isBold = currentStyle?.fontWeight === 'bold';
+    jianzi.applyStyleToSelection({ fontWeight: isBold ? 'normal' : 'bold' });
+  });
+  floatingToolbar.querySelector('#ft-italic')?.addEventListener('click', () => {
+    const currentStyle = jianzi.getSelectionStyle();
+    const isItalic = currentStyle?.fontStyle === 'italic';
+    jianzi.applyStyleToSelection({ fontStyle: isItalic ? 'normal' : 'italic' });
+  });
+  floatingToolbar.querySelector('#ft-underline')?.addEventListener('click', () => {
+    const currentStyle = jianzi.getSelectionStyle();
+    const isUnderline = !!currentStyle?.underline;
+    jianzi.applyStyleToSelection({ underline: !isUnderline });
+  });
+  floatingToolbar.querySelector('#ft-color-red')?.addEventListener('click', () => {
+    jianzi.applyStyleToSelection({ color: '#d32f2f' });
+  });
+  floatingToolbar.querySelector('#ft-bg-yellow')?.addEventListener('click', () => {
+    jianzi.applyStyleToSelection({ background: '#fff9c4' });
+  });
+  floatingToolbar.querySelector('#ft-clear')?.addEventListener('click', () => {
+    jianzi.applyStyleToSelection({
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      underline: false,
+      color: '#333',
+      background: undefined
+    });
+  });
+
+  // Handle Selection Change
+  const updateToolbar = () => {
+    const range = jianzi.selectionRange;
+    const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+
+
+    if (range && delta && delta.type === 'text' && Math.abs(range.start - range.end) > 0) {
+
+      // Show Toolbar
+      // Using 'any' to bypass TS check for TextDelta specific method if not imported
+      if ('getRectsForRange' in delta) {
+        const textDelta = delta as any;
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas?.getContext('2d');
+        const mode = jianzi.getOptions().mode || 'vertical';
+
+        if (ctx) {
+          const rects = textDelta.getRectsForRange(
+            ctx,
+            Math.min(range.start, range.end),
+            Math.max(range.start, range.end),
+            mode
+          );
+
+
+          if (rects && rects.length > 0) {
+            const rect = rects[0];
+            // Calculate position
+            const canvasRect = canvas?.getBoundingClientRect();
+
+
+            if (canvasRect) {
+              // Delta (x,y) + Rect (x,y) + Canvas (left, top)
+              const absX = canvasRect.left + textDelta.x + rect.x;
+              const absY = canvasRect.top + textDelta.y + rect.y;
+
+
+              floatingToolbar.style.left = `${absX}px`;
+              floatingToolbar.style.top = `${absY - 50}px`; // 50px above
+              floatingToolbar.classList.add('visible');
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    // Hide if no selection
+    floatingToolbar.classList.remove('visible');
+  };
+
+
+  document.addEventListener('mouseup', () => requestAnimationFrame(updateToolbar));
+  document.addEventListener('keyup', () => requestAnimationFrame(updateToolbar));
+
+  // Prevent focus loss when clicking toolbar
+  floatingToolbar.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+};
+bindToolbar();

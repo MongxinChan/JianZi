@@ -99,7 +99,9 @@ export class TextDelta extends Delta {
             color: fragmentStyle.color || '#2c3e50',
             background: fragmentStyle.background,
             underline: fragmentStyle.underline,
+            lineThrough: fragmentStyle.lineThrough,
             fontWeight: fragmentStyle.fontWeight || 'normal',
+            fontStyle: fragmentStyle.fontStyle || 'normal',
         };
     }
 
@@ -304,7 +306,6 @@ export class TextDelta extends Delta {
                 ctx.restore();
             }
 
-            // 2. Draw Text
             // 2. Draw Text
             // format: "fontStyle fontWeight fontSize fontFamily"
             const fStyle = style.fontStyle || 'normal';
