@@ -58,6 +58,7 @@ export class TextDelta extends Delta {
     public fontSize: number;
     public lineHeight: number;
     public letterSpacing: number;
+    public _manuallyResized: boolean = false;
 
     constructor(attr: DeltaLike & { content?: string; fragments?: RichContent; fontFamily?: string; fontSize?: number }) {
         super({ ...attr, type: DeltaType.Text });
@@ -255,12 +256,27 @@ export class TextDelta extends Delta {
         ctx.save();
         ctx.textBaseline = 'top';
         ctx.textAlign = 'left';
+        let layoutW: number;
+        let layoutH: number;
+        if (this._manuallyResized) {
+            // User resized: text reflows within the delta's own dimensions
+            layoutW = this.width + this.x;
+            layoutH = this.height + this.y;
+        } else {
+            // Auto-size: use canvas area
+            layoutW = areaWidth;
+            layoutH = areaHeight;
+        }
+        const layout = this._layout(mode, layoutW, layoutH);
 
-        const layout = this._layout(mode, areaWidth, areaHeight);
-
-        // Update bounding box
-        this.width = layout.totalWidth;
-        this.height = layout.totalHeight;
+        // Update bounding box from layout (always for auto, only expand for manual)
+        if (this._manuallyResized) {
+            if (layout.totalWidth > this.width) this.width = layout.totalWidth;
+            if (layout.totalHeight > this.height) this.height = layout.totalHeight;
+        } else {
+            this.width = layout.totalWidth;
+            this.height = layout.totalHeight;
+        }
 
         for (const pos of layout.positions) {
             const { cx, cy, style, char, width, height, colWidth, rowHeight } = pos;

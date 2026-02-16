@@ -303,6 +303,10 @@ export class Editor {
         delta.y = newY;
         delta.width = newW;
         delta.height = newH;
+        // Mark text deltas as manually resized so draw() respects user dimensions
+        if (delta instanceof TextDelta) {
+          delta._manuallyResized = true;
+        }
         this.refresh();
         return;
       }
