@@ -255,6 +255,20 @@ export class Editor {
             newX = r.x + r.width - newW;
             newY = r.y + r.height - newH;
             break;
+          case 'mr':
+            newW = Math.max(20, r.width + dx);
+            break;
+          case 'ml':
+            newW = Math.max(20, r.width - dx);
+            newX = r.x + r.width - newW;
+            break;
+          case 'mb':
+            newH = Math.max(20, r.height + dy);
+            break;
+          case 'mt':
+            newH = Math.max(20, r.height - dy);
+            newY = r.y + r.height - newH;
+            break;
         }
 
         // For ImageDelta: lock aspect ratio

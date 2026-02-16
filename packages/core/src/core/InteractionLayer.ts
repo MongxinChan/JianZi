@@ -3,7 +3,7 @@ import { JianZiOptions } from '../types';
 const HANDLE_SIZE = 8;
 const HALF_HANDLE = HANDLE_SIZE / 2;
 
-export type HandleType = 'tl' | 'tr' | 'bl' | 'br' | null;
+export type HandleType = 'tl' | 'tr' | 'bl' | 'br' | 'mt' | 'mb' | 'ml' | 'mr' | null;
 
 export class InteractionLayer {
     private canvas: HTMLCanvasElement;
@@ -43,11 +43,17 @@ export class InteractionLayer {
     }
 
     private _getHandlePositions(rect: { x: number; y: number; width: number; height: number }) {
+        const midX = rect.x + rect.width / 2 - HALF_HANDLE;
+        const midY = rect.y + rect.height / 2 - HALF_HANDLE;
         return {
             tl: { x: rect.x - HALF_HANDLE, y: rect.y - HALF_HANDLE },
             tr: { x: rect.x + rect.width - HALF_HANDLE, y: rect.y - HALF_HANDLE },
             br: { x: rect.x + rect.width - HALF_HANDLE, y: rect.y + rect.height - HALF_HANDLE },
             bl: { x: rect.x - HALF_HANDLE, y: rect.y + rect.height - HALF_HANDLE },
+            mt: { x: midX, y: rect.y - HALF_HANDLE },
+            mb: { x: midX, y: rect.y + rect.height - HALF_HANDLE },
+            ml: { x: rect.x - HALF_HANDLE, y: midY },
+            mr: { x: rect.x + rect.width - HALF_HANDLE, y: midY },
         };
     }
 
@@ -82,7 +88,7 @@ export class InteractionLayer {
         const handles = this._getHandlePositions(this._lastRect);
         const tolerance = HANDLE_SIZE + 2; // slightly larger hit area
 
-        for (const key of ['tl', 'tr', 'bl', 'br'] as const) {
+        for (const key of ['tl', 'tr', 'bl', 'br', 'mt', 'mb', 'ml', 'mr'] as const) {
             const h = handles[key];
             if (
                 px >= h.x - 2 && px <= h.x + tolerance &&
@@ -103,6 +109,8 @@ export class InteractionLayer {
             case 'tr': return 'nesw-resize';
             case 'bl': return 'nesw-resize';
             case 'br': return 'nwse-resize';
+            case 'mt': case 'mb': return 'ns-resize';
+            case 'ml': case 'mr': return 'ew-resize';
             default: return 'default';
         }
     }
