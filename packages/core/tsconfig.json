@@ -2,11 +2,18 @@
   "extends": "../../tsconfig.json", // 继承根目录的通用配置
   "compilerOptions": {
     "outDir": "../../dist/packages/core",
-    "rootDir": "src"
+    "rootDir": "src",
+    "lib": [
+      "es2015",
+      "dom"
+    ]
   },
   "include": [
-    "src/**/*.ts",    // 相对于当前目录，扫描 src 下的 ts 文件
-    "index.ts"        // 如果 index.ts 在 packages/core 根目录下
+    "src/**/*.ts", // 相对于当前目录，扫描 src 下的 ts 文件
+    "index.ts" // 如果 index.ts 在 packages/core 根目录下
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

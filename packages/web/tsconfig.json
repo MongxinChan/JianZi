@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
+    "module": "esnext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["vite/client"], 
+    "types": [
+      "vite/client"
+    ],
     "paths": {
-      "@jianzi/core": ["../core/src/index.ts"]
+      "@jianzi/core": [
+        "../core/src/index.ts"
+      ]
     },
     "ignoreDeprecations": "5.0"
   },

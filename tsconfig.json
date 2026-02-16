@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "module": "esnext",
     "paths": {
       "@jianzi/core": [
         "./packages/core/src/index.ts"
@@ -8,6 +9,7 @@
         "./packages/core/src/*"
       ]
     },
+    "module": "esnext",
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "noEmit": true
