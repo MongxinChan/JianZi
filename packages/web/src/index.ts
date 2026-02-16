@@ -19,6 +19,10 @@ const jianzi = new Editor({
 // 2. 模拟初始文字
 jianzi.setValue("以此为凭，书写寂静。我在这寂静中，发现了自己的力量。");
 
+// [添加文本框]
+document.querySelector('#add-text')?.addEventListener('click', () => {
+  jianzi.addText();
+});
 
 
 // [导出功能]
@@ -201,6 +205,7 @@ const bindToolbar = () => {
     swatch.addEventListener('click', (e) => {
       e.stopPropagation();
       const color = (swatch as HTMLElement).dataset.color || '#2c3e50';
+
       jianzi.applyStyleToSelection({ color });
       if (ftColorBar) ftColorBar.style.background = color;
       closeAllPalettes();

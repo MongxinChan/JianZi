@@ -367,7 +367,9 @@ export class Editor {
           this.layerManager.canvasLayer.ctx,
           s,
           e + 1,
-          mode
+          mode,
+          this.layerManager.canvasLayer.width,
+          this.layerManager.canvasLayer.height
         );
         this.layerManager.interactionLayer.drawTextSelection(rects);
       }
@@ -413,6 +415,39 @@ export class Editor {
         delta.fontFamily = fontFamily;
       }
     });
+    this.refresh();
+  }
+
+  /**
+   * 添加文本框到画布
+   * @param content 初始文本内容
+   * @param x 初始X位置
+   * @param y 初始Y位置
+   */
+  public addText(content?: string, x?: number, y?: number): void {
+    const padding = this.options.padding || 60;
+    const textDelta = new TextDelta({
+      id: `text-${Date.now()}`,
+      type: 'text' as any,
+      x: x ?? padding + 20,
+      y: y ?? padding + 20,
+      width: 100,
+      height: 200,
+      content: content || '在此输入…',
+      fontFamily: this.currentFont,
+      fontSize: 28,
+    });
+    this.deltas.add(textDelta);
+    // Select the new text box
+    this.deltas.forEach(d => d.selected = false);
+    textDelta.selected = true;
+    this.selectedDeltaId = textDelta.id;
+    this.selectionRange = null;
+    // Sync input bridge so user can type immediately
+    if (this.inputElement) {
+      this.inputElement.value = textDelta.content;
+      setTimeout(() => this.inputElement?.focus(), 0);
+    }
     this.refresh();
   }
 
