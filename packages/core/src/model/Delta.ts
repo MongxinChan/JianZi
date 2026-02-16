@@ -92,74 +92,152 @@ export class TextDelta extends Delta {
         }];
     }
 
+    private _getEffectiveStyle(fragmentStyle: CharStyle) {
+        return {
+            fontFamily: fragmentStyle.fontFamily || this.fontFamily,
+            fontSize: fragmentStyle.fontSize || this.fontSize,
+            color: fragmentStyle.color || '#2c3e50',
+            background: fragmentStyle.background,
+            underline: fragmentStyle.underline,
+            fontWeight: fragmentStyle.fontWeight || 'normal',
+        };
+    }
+
     /**
-     * Calculate character positions for both modes.
+     * Calculate character positions for both modes with RichText support.
      * Returns positions array and the bounding box dimensions.
      */
     private _layout(
         mode: LayoutMode,
         areaWidth: number,
         areaHeight: number,
-    ): { positions: { char: string; cx: number; cy: number }[]; totalWidth: number; totalHeight: number } {
-        const charSize = this.fontSize;
-        const cellH = charSize * this.lineHeight;
-        const cellW = charSize + this.letterSpacing;
-        const chars = this.content.split('');
-        const positions: { char: string; cx: number; cy: number }[] = [];
+    ): {
+        positions: {
+            char: string;
+            cx: number;
+            cy: number;
+            width: number;
+            height: number;
+            colWidth?: number; // For Vertical
+            rowHeight?: number; // For Horizontal
+            style: ReturnType<TextDelta['_getEffectiveStyle']>;
+        }[];
+        totalWidth: number;
+        totalHeight: number
+    } {
+        const positions: {
+            char: string;
+            cx: number;
+            cy: number;
+            width: number;
+            height: number;
+            colWidth?: number;
+            rowHeight?: number;
+            style: ReturnType<TextDelta['_getEffectiveStyle']>;
+        }[] = [];
 
         if (mode === 'vertical') {
-            // 竖排: top→bottom in each column, columns flow right→left
-            const maxRows = Math.max(1, Math.floor((areaHeight - this.y) / cellH));
-            let col = 0;
-            let row = 0;
+            let currentX = 0;
+            let currentY = 0;
+            let colWidth = 0;
+            let maxColHeight = 0;
+            let colBuffer: typeof positions = [];
 
-            for (const ch of chars) {
-                // Column x: starts from left, each new column goes to the right
-                // Actually traditional vertical is right-to-left, but since we start from this.x,
-                // let's place first column at this.x and go LEFT. We'll adjust later.
-                const cx = -col * cellW; // relative offset (will be adjusted)
-                const cy = row * cellH;  // relative offset
-                positions.push({ char: ch, cx, cy });
+            const flushColumn = () => {
+                for (const pos of colBuffer) {
+                    pos.colWidth = colWidth;
+                    positions.push(pos);
+                }
+                currentX += colWidth;
+                maxColHeight = Math.max(maxColHeight, currentY);
+                currentY = 0;
+                colWidth = 0;
+                colBuffer = [];
+            };
 
-                row++;
-                if (row >= maxRows) {
-                    row = 0;
-                    col++;
+            for (const fragment of this.fragments) {
+                const style = this._getEffectiveStyle(fragment.style);
+                const charSize = style.fontSize;
+                const lineHeight = 1.5;
+                const charH = charSize * lineHeight;
+                const charW = charSize + this.letterSpacing;
+
+                const chars = fragment.text.split('');
+                for (const char of chars) {
+                    if (currentY + charH > (areaHeight - this.y) && currentY > 0) {
+                        flushColumn();
+                    }
+
+                    colBuffer.push({
+                        char,
+                        cx: currentX, // Start of column
+                        cy: currentY,
+                        width: charW,
+                        height: charH,
+                        style
+                    });
+
+                    currentY += charH;
+                    colWidth = Math.max(colWidth, charW);
                 }
             }
+            flushColumn(); // Flush last column
 
-            const totalCols = col + (row > 0 ? 1 : 0);
-            const totalRows = totalCols === 1 ? chars.length : maxRows;
-            return {
-                positions,
-                totalWidth: totalCols * cellW,
-                totalHeight: Math.min(totalRows, chars.length) * cellH,
-            };
+            const totalWidth = currentX;
+            const totalHeight = maxColHeight;
+            return { positions, totalWidth, totalHeight };
+
         } else {
-            // 横排: left→right in each row, rows flow top→bottom
-            const maxCols = Math.max(1, Math.floor((areaWidth - this.x) / cellW));
-            let col = 0;
-            let row = 0;
+            // Horizontal
+            let currentX = 0;
+            let currentY = 0;
+            let rowHeight = 0;
+            let maxRowWidth = 0;
+            let rowBuffer: typeof positions = [];
 
-            for (const ch of chars) {
-                const cx = col * cellW;
-                const cy = row * cellH;
-                positions.push({ char: ch, cx, cy });
+            const flushRow = () => {
+                for (const pos of rowBuffer) {
+                    pos.rowHeight = rowHeight;
+                    positions.push(pos);
+                }
+                currentY += rowHeight;
+                maxRowWidth = Math.max(maxRowWidth, currentX);
+                currentX = 0;
+                rowHeight = 0;
+                rowBuffer = [];
+            };
 
-                col++;
-                if (col >= maxCols) {
-                    col = 0;
-                    row++;
+            for (const fragment of this.fragments) {
+                const style = this._getEffectiveStyle(fragment.style);
+                const charSize = style.fontSize;
+                const lineHeight = 1.5;
+                const charH = charSize * lineHeight;
+                const charW = charSize + this.letterSpacing;
+
+                const chars = fragment.text.split('');
+                for (const char of chars) {
+                    if (currentX + charW > (areaWidth - this.x) && currentX > 0) {
+                        flushRow();
+                    }
+
+                    rowBuffer.push({
+                        char,
+                        cx: currentX,
+                        cy: currentY, // Top of row
+                        width: charW,
+                        height: charH,
+                        style
+                    });
+
+                    currentX += charW;
+                    rowHeight = Math.max(rowHeight, charH);
                 }
             }
+            flushRow();
 
-            const totalRows = row + (col > 0 ? 1 : 0);
-            const totalCols = totalRows === 1 ? chars.length : maxCols;
-            return {
-                positions,
-                totalWidth: Math.min(totalCols, chars.length) * cellW,
-                totalHeight: totalRows * cellH,
-            };
+            const totalWidth = maxRowWidth;
+            const totalHeight = currentY;
+            return { positions, totalWidth, totalHeight };
         }
     }
 
@@ -173,10 +251,8 @@ export class TextDelta extends Delta {
 
     draw(ctx: CanvasRenderingContext2D, mode: LayoutMode = 'horizontal', areaWidth: number = 9999, areaHeight: number = 9999) {
         ctx.save();
-        ctx.font = `${this.fontSize}px ${this.fontFamily}`;
         ctx.textBaseline = 'top';
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#2c3e50';
 
         const layout = this._layout(mode, areaWidth, areaHeight);
 
@@ -184,18 +260,66 @@ export class TextDelta extends Delta {
         this.width = layout.totalWidth;
         this.height = layout.totalHeight;
 
-        if (mode === 'vertical') {
-            // For vertical: first column starts at right edge of bounding box
-            // cx is negative offset from the right edge
-            for (const pos of layout.positions) {
-                const drawX = this.x + this.width + pos.cx - (this.fontSize + this.letterSpacing);
-                const drawY = this.y + pos.cy;
-                ctx.fillText(pos.char, drawX, drawY);
+        for (const pos of layout.positions) {
+            const { cx, cy, style, char, width, height, colWidth, rowHeight } = pos;
+            let drawX = 0;
+            let drawY = 0;
+
+            if (mode === 'vertical') {
+                // RTL Layout:
+                // cx is LTR column start (0, colWidth1, colWidth1+colWidth2...)
+                // We want to flip this relative to totalWidth.
+                // Right edge of bounding box is `this.x + this.width`.
+                // Column Right Edge (LTR) is `cx + colWidth`.
+                // Distance from LTR Left to Column Right is `cx + colWidth`.
+                // In RTL, this becomes Distance from RTL Right to Column Left? 
+                // Let's use simpler math:
+                // RTL X = TotalWidth - (cx + colWidth).
+                // Abs X = this.x + RTL X.
+                const rtlX = layout.totalWidth - (cx + (colWidth || width));
+                drawX = this.x + rtlX;
+
+                // Center align char in column if charWidth < colWidth
+                if (colWidth && width < colWidth) {
+                    drawX += (colWidth - width) / 2;
+                }
+                drawY = this.y + cy;
+            } else {
+                drawX = this.x + cx;
+                drawY = this.y + cy;
+
+                // Bottom/Center align in row if rowHeight > height
+                // Default: Top align (no change)
+                if (rowHeight && height < rowHeight) {
+                    // Center vertically
+                    drawY += (rowHeight - height) / 2;
+                }
             }
-        } else {
-            // Horizontal: straightforward
-            for (const pos of layout.positions) {
-                ctx.fillText(pos.char, this.x + pos.cx, this.y + pos.cy);
+
+            // 1. Draw Background
+            if (style.background) {
+                ctx.save();
+                ctx.fillStyle = style.background;
+                ctx.fillRect(drawX, drawY, width, height);
+                ctx.restore();
+            }
+
+            // 2. Draw Text
+            ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
+            ctx.fillStyle = style.color;
+            ctx.fillText(char, drawX, drawY);
+
+            // 3. Draw Underline
+            if (style.underline) {
+                ctx.save();
+                ctx.strokeStyle = style.color;
+                ctx.lineWidth = 1;
+                const lineY = drawY + height - (height * 0.1);
+                ctx.beginPath();
+                ctx.moveTo(drawX, lineY);
+                ctx.lineTo(drawX + width - this.letterSpacing, lineY);
+                ctx.stroke();
+                ctx.restore();
             }
         }
 
