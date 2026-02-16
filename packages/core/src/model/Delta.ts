@@ -48,22 +48,48 @@ export abstract class Delta {
     }
 }
 
+import { RichContent, StyledFragment, CharStyle } from './RichText';
+
 export type LayoutMode = 'vertical' | 'horizontal';
 
 export class TextDelta extends Delta {
-    public content: string;
+    public fragments: RichContent;
     public fontFamily: string;
     public fontSize: number;
     public lineHeight: number;
     public letterSpacing: number;
 
-    constructor(attr: DeltaLike & { content: string; fontFamily?: string; fontSize?: number }) {
+    constructor(attr: DeltaLike & { content?: string; fragments?: RichContent; fontFamily?: string; fontSize?: number }) {
         super({ ...attr, type: DeltaType.Text });
-        this.content = attr.content;
+        if (attr.fragments) {
+            this.fragments = attr.fragments;
+        } else {
+            this.fragments = [{
+                text: attr.content || '',
+                style: {
+                    fontFamily: attr.fontFamily,
+                    fontSize: attr.fontSize,
+                }
+            }];
+        }
         this.fontFamily = attr.fontFamily || 'serif';
         this.fontSize = attr.fontSize || 28;
         this.lineHeight = 1.5;
         this.letterSpacing = 2;
+    }
+
+    get content(): string {
+        return this.fragments.map(f => f.text).join('');
+    }
+
+    set content(text: string) {
+        this.fragments = [{
+            text,
+            style: {
+                fontFamily: this.fontFamily,
+                fontSize: this.fontSize,
+            }
+        }];
     }
 
     /**
