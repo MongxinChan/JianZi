@@ -66,45 +66,6 @@ document.getElementById('font-family')?.addEventListener('change', (e) => {
   jianzi.setFont(selectElement.value);
 });
 
-// Selection Style Controls
-document.getElementById('style-font-size')?.addEventListener('change', (e) => {
-  const size = parseInt((e.target as HTMLInputElement).value);
-  if (!isNaN(size)) {
-    jianzi.applyStyleToSelection({ fontSize: size });
-  }
-});
-
-document.getElementById('style-color')?.addEventListener('input', (e) => {
-  jianzi.applyStyleToSelection({ color: (e.target as HTMLInputElement).value });
-});
-
-document.getElementById('style-background')?.addEventListener('input', (e) => {
-  jianzi.applyStyleToSelection({ background: (e.target as HTMLInputElement).value });
-});
-
-document.getElementById('style-bg-clear')?.addEventListener('click', () => {
-  jianzi.applyStyleToSelection({ background: undefined });
-});
-
-
-document.getElementById('style-bold')?.addEventListener('click', () => {
-  const currentStyle = jianzi.getSelectionStyle();
-  const isBold = currentStyle?.fontWeight === 'bold';
-  jianzi.applyStyleToSelection({ fontWeight: isBold ? 'normal' : 'bold' });
-});
-
-document.getElementById('style-italic')?.addEventListener('click', () => {
-  const currentStyle = jianzi.getSelectionStyle();
-  const isItalic = currentStyle?.fontStyle === 'italic';
-  jianzi.applyStyleToSelection({ fontStyle: isItalic ? 'normal' : 'italic' });
-});
-
-document.getElementById('style-underline')?.addEventListener('click', () => {
-  const currentStyle = jianzi.getSelectionStyle();
-  const isUnderline = !!currentStyle?.underline;
-  jianzi.applyStyleToSelection({ underline: !isUnderline });
-});
-
 
 // [布局联动：格线透明度]
 document.querySelector('#grid-opacity')?.addEventListener('input', (e) => {
@@ -208,20 +169,75 @@ const bindToolbar = () => {
     const isUnderline = !!currentStyle?.underline;
     jianzi.applyStyleToSelection({ underline: !isUnderline });
   });
-  floatingToolbar.querySelector('#ft-color-red')?.addEventListener('click', () => {
-    jianzi.applyStyleToSelection({ color: '#d32f2f' });
+  // Color Palette logic
+  const ftColorPalette = document.getElementById('ft-color-palette');
+  const ftBgPalette = document.getElementById('ft-bg-palette');
+  const ftColorBar = document.getElementById('ft-color-bar');
+  const ftBgBar = document.getElementById('ft-bg-bar');
+
+  const closeAllPalettes = () => {
+    ftColorPalette?.classList.remove('open');
+    ftBgPalette?.classList.remove('open');
+  };
+
+  // Toggle font color palette
+  floatingToolbar.querySelector('#ft-color-trigger')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = ftColorPalette?.classList.contains('open');
+    closeAllPalettes();
+    if (!isOpen) ftColorPalette?.classList.add('open');
   });
-  floatingToolbar.querySelector('#ft-bg-yellow')?.addEventListener('click', () => {
-    jianzi.applyStyleToSelection({ background: '#fff9c4' });
+
+  // Toggle highlight palette
+  floatingToolbar.querySelector('#ft-bg-trigger')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = ftBgPalette?.classList.contains('open');
+    closeAllPalettes();
+    if (!isOpen) ftBgPalette?.classList.add('open');
   });
+
+  // Font color swatches
+  ftColorPalette?.querySelectorAll('.ft-swatch').forEach(swatch => {
+    swatch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const color = (swatch as HTMLElement).dataset.color || '#2c3e50';
+      jianzi.applyStyleToSelection({ color });
+      if (ftColorBar) ftColorBar.style.background = color;
+      closeAllPalettes();
+    });
+  });
+
+  // Highlight color swatches
+  ftBgPalette?.querySelectorAll('.ft-swatch').forEach(swatch => {
+    swatch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const color = (swatch as HTMLElement).dataset.color;
+      if (color) {
+        jianzi.applyStyleToSelection({ background: color });
+        if (ftBgBar) ftBgBar.style.background = color;
+      } else {
+        // Clear highlight
+        jianzi.applyStyleToSelection({ background: undefined });
+        if (ftBgBar) ftBgBar.style.background = 'transparent';
+      }
+      closeAllPalettes();
+    });
+  });
+
+  // Close palettes when clicking outside
+  document.addEventListener('click', () => closeAllPalettes());
+
   floatingToolbar.querySelector('#ft-clear')?.addEventListener('click', () => {
     jianzi.applyStyleToSelection({
       fontWeight: 'normal',
       fontStyle: 'normal',
       underline: false,
-      color: '#333',
+      color: '#2c3e50',
       background: undefined
     });
+    if (ftColorBar) ftColorBar.style.background = '#2c3e50';
+    if (ftBgBar) ftBgBar.style.background = 'transparent';
+    closeAllPalettes();
   });
 
   // Handle Selection Change
