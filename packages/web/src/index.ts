@@ -173,6 +173,14 @@ const bindToolbar = () => {
     const isUnderline = !!currentStyle?.underline;
     jianzi.applyStyleToSelection({ underline: !isUnderline });
   });
+  // Font size selector
+  const ftFontSize = floatingToolbar.querySelector('#ft-font-size') as HTMLSelectElement;
+  ftFontSize?.addEventListener('change', () => {
+    const size = parseInt(ftFontSize.value, 10);
+    if (size >= 8 && size <= 24) {
+      jianzi.applyStyleToSelection({ fontSize: size });
+    }
+  });
   // Color Palette logic
   const ftColorPalette = document.getElementById('ft-color-palette');
   const ftBgPalette = document.getElementById('ft-bg-palette');

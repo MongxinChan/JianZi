@@ -303,9 +303,10 @@ export class Editor {
         delta.y = newY;
         delta.width = newW;
         delta.height = newH;
-        // Mark text deltas as manually resized so draw() respects user dimensions
+        // For text deltas, set layout constraints so text reflows within the resized area
         if (delta instanceof TextDelta) {
-          delta._manuallyResized = true;
+          delta.layoutConstraintW = newW;
+          delta.layoutConstraintH = newH;
         }
         this.refresh();
         return;

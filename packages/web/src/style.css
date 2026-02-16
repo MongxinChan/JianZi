@@ -333,6 +333,27 @@ body {
   margin: 0 4px;
 }
 
+.ft-font-size-select {
+  height: 28px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 12px;
+  padding: 0 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+.ft-font-size-select:hover {
+  border-color: #1890ff;
+}
+
+.ft-font-size-select:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
 /* Color Palette Components */
 .ft-color-wrap {
   position: relative;
