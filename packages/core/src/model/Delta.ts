@@ -325,6 +325,127 @@ export class TextDelta extends Delta {
 
         ctx.restore();
     }
+
+    /**
+     * Get character index at specific coordinate (relative to delta's x,y is handled by passing absolute x,y but we need to adjust).
+     * Actually x,y passed should be absolute canvas coordinates?
+     * Yes.
+     */
+    public getCharIndexAt(ctx: CanvasRenderingContext2D, x: number, y: number, mode: LayoutMode): number {
+        const layout = this._layout(mode, 9999, 9999); // Todo: pass actual area?
+        // For simplicity, we assume hitting anywhere inside the char box returns its index.
+        const localX = x - this.x;
+        const localY = y - this.y;
+
+        // Iterate positions to find hit
+        let index = 0;
+
+        // We need to match the 'draw' logic for RTL
+        for (const pos of layout.positions) {
+            const { cx, cy, width, height, colWidth, rowHeight } = pos;
+            let targetX = cx;
+            let targetY = cy;
+            let targetW = width;
+            let targetH = height;
+
+            if (mode === 'vertical') {
+                // RTL Logic matching draw()
+                // drawX = this.x + (totalWidth - (cx + (colWidth || width)))
+                // So relative X = totalWidth - (cx + (colWidth || width))
+                // Center alignment: + (colWidth - width)/2
+                const rtlX = layout.totalWidth - (cx + (colWidth || width));
+                targetX = rtlX;
+                if (colWidth && width < colWidth) {
+                    targetX += (colWidth - width) / 2;
+                }
+                targetY = cy;
+                // Hit test against the full column width/height or just the char?
+                // Better to hit test the full "cell" for easier selection.
+                // Cell Width is colWidth? Cell Height is height (charH).
+                targetW = colWidth || width;
+            } else {
+                // Horizontal
+                // drawY might be centered
+                if (rowHeight && height < rowHeight) {
+                    targetY += (rowHeight - height) / 2;
+                }
+                targetH = rowHeight || height; // Hit test full row height
+            }
+
+            if (
+                localX >= targetX && localX <= targetX + targetW &&
+                localY >= targetY && localY <= targetY + targetH
+            ) {
+                return index;
+            }
+            index++;
+        }
+
+        return -1; // Miss
+    }
+
+    /**
+     * Get rectangles for a range of characters.
+     * Used for drawing selection highlight.
+     */
+    public getRectsForRange(ctx: CanvasRenderingContext2D, start: number, end: number, mode: LayoutMode): { x: number; y: number; width: number; height: number }[] {
+        const layout = this._layout(mode, 9999, 9999);
+        const rects: { x: number; y: number; width: number; height: number }[] = [];
+
+        // Clamp
+        const s = Math.max(0, Math.min(start, layout.positions.length));
+        const e = Math.max(0, Math.min(end, layout.positions.length));
+        if (s >= e) return [];
+
+        for (let i = s; i < e; i++) {
+            const pos = layout.positions[i];
+            const { cx, cy, width, height, colWidth, rowHeight } = pos;
+            let drawX = 0;
+            let drawY = 0;
+            let drawW = width;
+            let drawH = height;
+
+            if (mode === 'vertical') {
+                const rtlX = layout.totalWidth - (cx + (colWidth || width));
+                drawX = this.x + rtlX;
+                // Full column width for selection looks better?
+                // Or just char width?
+                // Usually selection covers the full "line height" (width in vertical).
+                // So use colWidth if available.
+                if (colWidth) {
+                    // Re-calculate drawX for full column
+                    // rtlX was based on colWidth. 
+                    // drawX is correct left edge of column.
+                    drawW = colWidth;
+                } else {
+                    drawW = width;
+                }
+                // Vertical selection usually continuous?
+                // The gap between chars?
+                // charH includes lineHeight logic?
+                // In _layout: charH = charSize * lineHeight.
+                // So height already includes gap.
+                drawH = height;
+                drawY = this.y + cy;
+            } else {
+                drawX = this.x + cx;
+                drawY = this.y + cy;
+                if (rowHeight) {
+                    drawH = rowHeight;
+                    if (rowHeight > height) {
+                        // If we centered text, we still want selection to cover full row height
+                        // drawY is top of row.
+                    }
+                }
+                drawW = width; // Includes letterSpacing? 
+                // width = charSize + letterSpacing in _layout
+                // So yes.
+            }
+
+            rects.push({ x: drawX, y: drawY, width: drawW, height: drawH });
+        }
+        return rects;
+    }
 }
 
 export class ImageDelta extends Delta {

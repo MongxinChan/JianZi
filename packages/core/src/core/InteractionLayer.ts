@@ -119,4 +119,13 @@ export class InteractionLayer {
 
         this.ctx.scale(dpr, dpr);
     }
+    public drawTextSelection(rects: { x: number; y: number; width: number; height: number }[]) {
+        if (!this.ctx) return;
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(24, 144, 255, 0.3)'; // Blue selection color
+        for (const rect of rects) {
+            this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        }
+        this.ctx.restore();
+    }
 }

@@ -15,6 +15,7 @@ export class Editor {
   // TODO: Select/Input logic will be moved to InteractionLayer later
   private inputElement: HTMLTextAreaElement | null = null;
   private selectedDeltaId: string | null = null;
+  private selectionRange: { start: number; end: number } | null = null;
   private currentFont: string = "'STKaiti', 'KaiTi', serif";
 
   constructor(options: JianZiOptions) {
@@ -29,11 +30,14 @@ export class Editor {
    */
   public clear(): void {
     this.deltas.clear();
+    this.selectionRange = null;
     if (this.inputElement) {
       this.inputElement.value = '';
     }
     this.refresh();
   }
+
+
 
   /**
    * 导出当前画布内容为图片
@@ -135,6 +139,7 @@ export class Editor {
     // Mouse Interaction Logic
     let isDragging = false;
     let isResizing = false;
+    let isSelectingText = false;
     let activeHandle: import('./core/InteractionLayer').HandleType = null;
     let lastX = 0;
     let lastY = 0;
@@ -168,8 +173,25 @@ export class Editor {
         }
       }
 
-      // 2) Otherwise, normal select/drag logic
-      const delta = this.deltas.hitTest(x, y);
+      // 2) Check Text Selection (Click on selected text)
+      const hitDelta = this.deltas.hitTest(x, y);
+      if (hitDelta && this.selectedDeltaId === hitDelta.id && hitDelta instanceof TextDelta) {
+        const idx = hitDelta.getCharIndexAt(
+          // @ts-ignore
+          this.layerManager.canvasLayer.ctx,
+          x, y, this.options.mode || 'vertical'
+        );
+        if (idx !== -1) {
+          isSelectingText = true;
+          this.selectionRange = { start: idx, end: idx };
+          isDragging = false; // Prevent dragging
+          this.refresh();
+          return;
+        }
+      }
+
+      // 3) Otherwise, normal select/drag logic
+      const delta = hitDelta;
 
       // Deselect all
       this.deltas.forEach(d => d.selected = false);
@@ -180,6 +202,7 @@ export class Editor {
         isDragging = true;
         lastX = x;
         lastY = y;
+        this.selectionRange = null; // Reset text selection on new delta select
 
         // Focus input if text (to allow editing)
         if (delta.type === 'text') {
@@ -190,6 +213,7 @@ export class Editor {
         }
       } else {
         this.selectedDeltaId = null;
+        this.selectionRange = null;
         setTimeout(() => this.inputElement?.focus(), 0);
       }
       this.refresh();
@@ -267,6 +291,23 @@ export class Editor {
         return;
       }
 
+      // --- Text Selection mode ---
+      if (isSelectingText && this.selectedDeltaId && this.selectionRange) {
+        const delta = this.deltas.get(this.selectedDeltaId);
+        if (delta instanceof TextDelta) {
+          const idx = delta.getCharIndexAt(
+            // @ts-ignore
+            this.layerManager.canvasLayer.ctx,
+            x, y, this.options.mode || 'vertical'
+          );
+          if (idx !== -1) {
+            this.selectionRange.end = idx;
+            this.refresh();
+          }
+        }
+        return;
+      }
+
       // --- Drag mode ---
       if (isDragging && this.selectedDeltaId) {
         const dx = x - lastX;
@@ -291,6 +332,7 @@ export class Editor {
     this.options.container.addEventListener('mouseup', () => {
       isDragging = false;
       isResizing = false;
+      isSelectingText = false;
       activeHandle = null;
       resizeStartRect = null;
       resizeStartMouse = null;
@@ -310,6 +352,21 @@ export class Editor {
     if (selectedDelta) {
       // @ts-ignore
       this.layerManager.interactionLayer.drawSelection(selectedDelta.getRect());
+
+      // Draw text selection
+      if (selectedDelta instanceof TextDelta && this.selectionRange) {
+        const s = Math.min(this.selectionRange.start, this.selectionRange.end);
+        const e = Math.max(this.selectionRange.start, this.selectionRange.end);
+        // Inclusive - Inclusive (Character Box Selection)
+        const rects = selectedDelta.getRectsForRange(
+          // @ts-ignore
+          this.layerManager.canvasLayer.ctx,
+          s,
+          e + 1,
+          mode
+        );
+        this.layerManager.interactionLayer.drawTextSelection(rects);
+      }
     }
   }
 
