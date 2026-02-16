@@ -176,3 +176,77 @@ export class TextDelta extends Delta {
         ctx.restore();
     }
 }
+
+export class ImageDelta extends Delta {
+    public src: string;
+    public aspectRatio: number = 1;
+    private _img: HTMLImageElement | null = null;
+    private _loaded: boolean = false;
+    private _onLoadCallback: (() => void) | null = null;
+
+    constructor(
+        attr: Omit<DeltaLike, 'type'> & { src: string },
+        onLoad?: () => void,
+    ) {
+        super({ ...attr, type: DeltaType.Image });
+        this.src = attr.src;
+        this._onLoadCallback = onLoad || null;
+        this._loadImage();
+    }
+
+    private _loadImage() {
+        const img = new Image();
+        img.onload = () => {
+            this._img = img;
+            this._loaded = true;
+            this.aspectRatio = img.naturalWidth / img.naturalHeight;
+
+            // If no explicit size was given, use natural size (clamped)
+            if (this.width <= 0 || this.height <= 0) {
+                const maxDim = 300;
+                if (img.naturalWidth > img.naturalHeight) {
+                    this.width = Math.min(img.naturalWidth, maxDim);
+                    this.height = this.width / this.aspectRatio;
+                } else {
+                    this.height = Math.min(img.naturalHeight, maxDim);
+                    this.width = this.height * this.aspectRatio;
+                }
+            }
+
+            // Notify editor to re-render
+            if (this._onLoadCallback) {
+                this._onLoadCallback();
+            }
+        };
+        img.onerror = () => {
+            console.error('ImageDelta: Failed to load image', this.src.substring(0, 100));
+        };
+        img.src = this.src;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        if (!this._loaded || !this._img) {
+            // Draw placeholder
+            ctx.save();
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(this.x, this.y, this.width || 100, this.height || 100);
+            ctx.fillStyle = '#999';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Loading...', this.x + (this.width || 100) / 2, this.y + (this.height || 100) / 2);
+            ctx.restore();
+            return;
+        }
+
+        ctx.save();
+        ctx.drawImage(this._img, this.x, this.y, this.width, this.height);
+        ctx.restore();
+    }
+
+    /** Resize while preserving aspect ratio */
+    public resizeKeepAspect(newWidth: number) {
+        this.width = newWidth;
+        this.height = newWidth / this.aspectRatio;
+    }
+}
