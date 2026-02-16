@@ -305,7 +305,11 @@ export class TextDelta extends Delta {
             }
 
             // 2. Draw Text
-            ctx.font = `${style.fontWeight} ${style.fontSize}px ${style.fontFamily}`;
+            // 2. Draw Text
+            // format: "fontStyle fontWeight fontSize fontFamily"
+            const fStyle = style.fontStyle || 'normal';
+            const fWeight = style.fontWeight || 'normal';
+            ctx.font = `${fStyle} ${fWeight} ${style.fontSize}px ${style.fontFamily}`;
             ctx.fillStyle = style.color;
             ctx.fillText(char, drawX, drawY);
 
@@ -445,6 +449,22 @@ export class TextDelta extends Delta {
             rects.push({ x: drawX, y: drawY, width: drawW, height: drawH });
         }
         return rects;
+    }
+
+    public getStyleAt(index: number): import('./RichText').CharStyle | null {
+        let cursor = 0;
+        for (const fragment of this.fragments) {
+            const len = fragment.text.length;
+            if (index >= cursor && index < cursor + len) {
+                return { ...fragment.style };
+            }
+            cursor += len;
+        }
+        // If at the very end, return last style or empty
+        if (this.fragments.length > 0 && index === cursor) {
+            return { ...this.fragments[this.fragments.length - 1].style };
+        }
+        return null;
     }
 }
 

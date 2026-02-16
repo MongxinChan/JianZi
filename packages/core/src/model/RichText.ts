@@ -3,6 +3,7 @@ export interface CharStyle {
     fontSize?: number;    // 字体大小
     fontFamily?: string;  // 字体
     fontWeight?: string;  // 粗体
+    fontStyle?: string;   // 斜体
     background?: string;  // 荧光笔背景色
     underline?: boolean;
     lineThrough?: boolean; // 删去线

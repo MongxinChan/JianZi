@@ -457,4 +457,16 @@ export class Editor {
       }
     }
   }
+
+
+  public getSelectionStyle(): Partial<CharStyle> | null {
+    if (this.selectedDeltaId && this.selectionRange) {
+      const delta = this.deltas.get(this.selectedDeltaId);
+      if (delta instanceof TextDelta) {
+        const index = Math.min(this.selectionRange.start, this.selectionRange.end);
+        return delta.getStyleAt(index);
+      }
+    }
+    return null;
+  }
 }
