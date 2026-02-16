@@ -314,15 +314,23 @@ export class TextDelta extends Delta {
             ctx.fillStyle = style.color;
             ctx.fillText(char, drawX, drawY);
 
-            // 3. Draw Underline
+            // 3. Draw Underline (horizontal) / Side line (vertical)
             if (style.underline) {
                 ctx.save();
                 ctx.strokeStyle = style.color;
                 ctx.lineWidth = 1;
-                const lineY = drawY + height - (height * 0.1);
                 ctx.beginPath();
-                ctx.moveTo(drawX, lineY);
-                ctx.lineTo(drawX + width - this.letterSpacing, lineY);
+                if (mode === 'vertical') {
+                    // 竖排旁线：字符左侧的竖线
+                    const lineX = drawX - width * 0.15;
+                    ctx.moveTo(lineX, drawY);
+                    ctx.lineTo(lineX, drawY + height);
+                } else {
+                    // 横排下划线：字符底部的横线
+                    const lineY = drawY + height - (height * 0.1);
+                    ctx.moveTo(drawX, lineY);
+                    ctx.lineTo(drawX + width - this.letterSpacing, lineY);
+                }
                 ctx.stroke();
                 ctx.restore();
             }
