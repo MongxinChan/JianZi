@@ -34,13 +34,15 @@
                 <div class="tool-btn" title="Text">
                     <span class="icon">T</span>
                 </div>
-                <div class="tool-btn" title="Image">
+                <div class="tool-btn" id="add-image" title="Image">
                     <span class="icon">Img</span>
                 </div>
                 <div class="tool-item-divider"></div>
                 <div class="tool-btn" id="clear" title="Clear">
                     <span class="icon">×</span>
                 </div>
+                <!-- Hidden file input for image upload -->
+                <input type="file" id="image-file-input" accept="image/*" style="display:none;">
             </aside>
 
             <!-- Center Viewport -->
@@ -107,7 +109,21 @@
 
                     <div class="divider"></div>
 
-                    <!-- Grid Section -->
+                    <!-- Font Section -->
+                    <div class="prop-group">
+                        <div class="group-title">字体 Font</div>
+                        <div class="prop-row">
+                            <label>字族 Family</label>
+                            <select id="font-family" class="input-sm" style="width: 100%;">
+                                <option value="'STKaiti', 'KaiTi', serif">楷體 KaiTi</option>
+                                <option value="'Inter', 'Segoe UI', sans-serif">現代無襯線 Inter</option>
+                                <option value="'Fira Code', 'Consolas', monospace">等寬 Fira Code</option>
+                                <option value="'Georgia', 'Palatino', serif">優雅襯線 Georgia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
                     <div class="prop-group">
                         <div class="group-title">网格 Grid</div>
                         <div class="prop-row">

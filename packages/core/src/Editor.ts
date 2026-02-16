@@ -15,6 +15,7 @@ export class Editor {
   // TODO: Select/Input logic will be moved to InteractionLayer later
   private inputElement: HTMLTextAreaElement | null = null;
   private selectedDeltaId: string | null = null;
+  private currentFont: string = "'STKaiti', 'KaiTi', serif";
 
 
   constructor(options: JianZiOptions) {
@@ -123,7 +124,7 @@ export class Editor {
             type: 'text' as any,
             content: text,
             fontSize: 28,
-            fontFamily: "'STKaiti', 'KaiTi', serif"
+            fontFamily: this.currentFont
           });
           this.deltas.add(textDelta);
           this.selectedDeltaId = textDelta.id; // Auto select
@@ -327,7 +328,7 @@ export class Editor {
         type: 'text' as any,
         content: val,
         fontSize: 28,
-        fontFamily: "'STKaiti', 'KaiTi', serif"
+        fontFamily: this.currentFont
       }));
       this.refresh();
     }
@@ -343,6 +344,19 @@ export class Editor {
   }
 
 
+
+  /**
+   * 设置所有文本的字体
+   */
+  public setFont(fontFamily: string): void {
+    this.currentFont = fontFamily;
+    this.deltas.forEach(delta => {
+      if (delta instanceof TextDelta) {
+        delta.fontFamily = fontFamily;
+      }
+    });
+    this.refresh();
+  }
 
   /**
    * 添加图片到画布

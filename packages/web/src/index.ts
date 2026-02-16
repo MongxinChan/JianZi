@@ -110,3 +110,33 @@ document.querySelectorAll('.chip').forEach(chip => {
     }
   });
 });
+
+// [图片上传功能]
+const addImageBtn = document.querySelector('#add-image');
+const imageFileInput = document.querySelector('#image-file-input') as HTMLInputElement;
+
+addImageBtn?.addEventListener('click', () => {
+  imageFileInput?.click();
+});
+
+imageFileInput?.addEventListener('change', (e) => {
+  const target = e.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result as string;
+    jianzi.addImage(dataUrl);
+  };
+  reader.readAsDataURL(file);
+
+  // Reset input so the same file can be re-selected
+  target.value = '';
+});
+
+// [字体选择]
+const fontSelect = document.querySelector('#font-family') as HTMLSelectElement;
+fontSelect?.addEventListener('change', () => {
+  jianzi.setFont(fontSelect.value);
+});
