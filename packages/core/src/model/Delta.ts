@@ -50,60 +50,20 @@ export abstract class Delta {
 
 export type LayoutMode = 'vertical' | 'horizontal';
 
-export interface CharStyle {
-    color?: string;
-    fontSize?: number;
-    fontFamily?: string;
-    fontWeight?: string;
-    background?: string;
-    underline?: boolean;
-}
-
-export interface StyledFragment {
-    text: string;
-    style: CharStyle;
-}
-
 export class TextDelta extends Delta {
-    public fragments: StyledFragment[];
+    public content: string;
     public fontFamily: string;
     public fontSize: number;
     public lineHeight: number;
     public letterSpacing: number;
 
-    constructor(attr: DeltaLike & { content?: string; fragments?: StyledFragment[]; fontFamily?: string; fontSize?: number }) {
+    constructor(attr: DeltaLike & { content: string; fontFamily?: string; fontSize?: number }) {
         super({ ...attr, type: DeltaType.Text });
+        this.content = attr.content;
         this.fontFamily = attr.fontFamily || 'serif';
         this.fontSize = attr.fontSize || 28;
         this.lineHeight = 1.5;
         this.letterSpacing = 2;
-
-        if (attr.fragments) {
-            this.fragments = attr.fragments;
-        } else {
-            this.fragments = [{
-                text: attr.content || '',
-                style: {
-                    fontFamily: this.fontFamily,
-                    fontSize: this.fontSize,
-                }
-            }];
-        }
-    }
-
-    get content(): string {
-        return this.fragments.map(f => f.text).join('');
-    }
-
-    set content(val: string) {
-        // Reset to single fragment with current default styles
-        this.fragments = [{
-            text: val,
-            style: {
-                fontFamily: this.fontFamily,
-                fontSize: this.fontSize,
-            }
-        }];
     }
 
     /**

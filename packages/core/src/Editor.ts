@@ -15,8 +15,6 @@ export class Editor {
   // TODO: Select/Input logic will be moved to InteractionLayer later
   private inputElement: HTMLTextAreaElement | null = null;
   private selectedDeltaId: string | null = null;
-  private currentFont: string = "'STKaiti', 'KaiTi', serif";
-
 
   constructor(options: JianZiOptions) {
     this.options = options;
@@ -124,7 +122,7 @@ export class Editor {
             type: 'text' as any,
             content: text,
             fontSize: 28,
-            fontFamily: this.currentFont
+            fontFamily: "'STKaiti', 'KaiTi', serif"
           });
           this.deltas.add(textDelta);
           this.selectedDeltaId = textDelta.id; // Auto select
@@ -328,7 +326,7 @@ export class Editor {
         type: 'text' as any,
         content: val,
         fontSize: 28,
-        fontFamily: this.currentFont
+        fontFamily: "'STKaiti', 'KaiTi', serif"
       }));
       this.refresh();
     }
@@ -341,21 +339,6 @@ export class Editor {
       return (all[0] as TextDelta).content;
     }
     return '';
-  }
-
-
-
-  /**
-   * 设置所有文本的字体
-   */
-  public setFont(fontFamily: string): void {
-    this.currentFont = fontFamily;
-    this.deltas.forEach(delta => {
-      if (delta instanceof TextDelta) {
-        delta.fontFamily = fontFamily;
-      }
-    });
-    this.refresh();
   }
 
   /**
