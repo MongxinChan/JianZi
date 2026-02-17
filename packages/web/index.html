@@ -53,16 +53,38 @@
             </main>
 
             <!-- Right Property Panel -->
-            <aside class="right-properties">
-                <!-- Panel Header -->
-                <div class="panel-header">
-                    <span>属性 Properties</span>
-                </div>
+            <aside class="right-properties" id="right-panel">
+                <div class="toggle-right-btn" id="toggle-right-panel"> &lt; </div>
 
+                <div class="panel-header">
+                    属性 Properties
+                </div>
                 <div class="panel-content">
+                    <div class="prop-group">
+                        <div class="group-title">预设尺寸 Presets</div>
+                        <div class="preset-grid">
+                            <div class="preset-btn" data-w="794" data-h="1123">
+                                A4
+                                <span>794 x 1123</span>
+                            </div>
+                            <div class="preset-btn" data-w="559" data-h="794">
+                                A5
+                                <span>559 x 794</span>
+                            </div>
+                            <div class="preset-btn" data-w="768" data-h="960">
+                                iPad
+                                <span>768 x 960</span>
+                            </div>
+                            <div class="preset-btn" data-w="1000" data-h="1000">
+                                Square
+                                <span>1000 x 1000</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Canvas Size Section -->
                     <div class="prop-group">
-                        <div class="group-title">画布 Canvas</div>
+                        <div class="group-title">画布尺寸 Canvas Size</div>
                         <div class="prop-row">
                             <label>预设 Preset</label>
                             <div class="chip-list">

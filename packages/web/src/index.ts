@@ -54,8 +54,6 @@ document.querySelector('#clear')?.addEventListener('click', () => {
   }
 });
 
-
-
 // [布局联动：排版模式]
 const radioInputs = document.querySelectorAll('input[name="layout-mode"]');
 radioInputs.forEach(input => {
@@ -341,3 +339,40 @@ const bindToolbar = () => {
   });
 };
 bindToolbar();
+
+// [右侧边栏交互]
+const rightPanel = document.getElementById('right-panel');
+const toggleBtn = document.getElementById('toggle-right-panel');
+
+toggleBtn?.addEventListener('click', () => {
+  if (rightPanel) {
+    const isOpen = rightPanel.classList.toggle('open');
+    toggleBtn.textContent = isOpen ? '>' : '<';
+  }
+});
+
+// [预设尺寸点击]
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    // Traverse up in case click on span
+    const target = (e.target as HTMLElement).closest('.preset-btn');
+    if (!target) return;
+
+    const w = target.getAttribute('data-w');
+    const h = target.getAttribute('data-h');
+
+    if (w && h && widthInput && heightInput) {
+      widthInput.value = w;
+      heightInput.value = h;
+      // Trigger change event manually or call update function
+      // Assuming updateCanvasSize is accessible or bind change event
+      // updateCanvasSize is defined in scope but const.
+      // We can dispatch event on inputs?
+      // Or call updateCanvasSize directly if it's in scope.
+      // updateCanvasSize IS in scope.
+
+      // Manually trigger the update
+      jianzi.updateOptions({ width: parseInt(w), height: parseInt(h) });
+    }
+  });
+});
