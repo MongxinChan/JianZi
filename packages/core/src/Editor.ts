@@ -17,12 +17,24 @@ export class Editor {
   public selectedDeltaId: string | null = null;
   public selectionRange: { start: number; end: number } | null = null;
   private currentFont: string = "'STKaiti', 'KaiTi', serif";
+  public toolMode: 'select' | 'hand' = 'select';
 
   constructor(options: JianZiOptions) {
     this.options = options;
     this.deltas = new DeltaSet();
     this.layerManager = new LayerManager(options);
     this.initInputBridge();
+  }
+
+  public setTool(mode: 'select' | 'hand'): void {
+    this.toolMode = mode;
+    // Reset selection if switching to hand?
+    // Maybe keep selection but disable interaction.
+    if (mode === 'hand') {
+      this.options.container.style.cursor = 'grab';
+    } else {
+      this.options.container.style.cursor = 'default';
+    }
   }
 
   /**
@@ -140,6 +152,10 @@ export class Editor {
     let isDragging = false;
     let isResizing = false;
     let isSelectingText = false;
+    let isPanning = false; // [Hand Mode]
+    let startPan = { x: 0, y: 0 };
+    let startScroll = { left: 0, top: 0 };
+
     let activeHandle: import('./core/InteractionLayer').HandleType = null;
     let lastX = 0;
     let lastY = 0;
@@ -156,6 +172,18 @@ export class Editor {
     };
 
     this.options.container.addEventListener('mousedown', (e) => {
+      // [Hand Mode] Logic
+      if (this.toolMode === 'hand') {
+        isPanning = true;
+        startPan = { x: e.clientX, y: e.clientY };
+        const viewport = this.options.container.parentElement;
+        if (viewport) {
+          startScroll = { left: viewport.scrollLeft, top: viewport.scrollTop };
+          this.options.container.style.cursor = 'grabbing';
+        }
+        return;
+      }
+
       const { x, y } = getMousePos(e);
 
       // 1) Check if we clicked on a resize handle of the currently selected delta
@@ -222,6 +250,20 @@ export class Editor {
     });
 
     this.options.container.addEventListener('mousemove', (e) => {
+      // [Hand Mode] Logic
+      if (this.toolMode === 'hand') {
+        if (isPanning) {
+          const viewport = this.options.container.parentElement;
+          if (viewport) {
+            const dx = e.clientX - startPan.x;
+            const dy = e.clientY - startPan.y;
+            viewport.scrollLeft = startScroll.left - dx;
+            viewport.scrollTop = startScroll.top - dy;
+          }
+        }
+        return;
+      }
+
       const { x, y } = getMousePos(e);
 
       // --- Resize mode ---
@@ -359,6 +401,12 @@ export class Editor {
       activeHandle = null;
       resizeStartRect = null;
       resizeStartMouse = null;
+
+      // [Hand Mode]
+      if (isPanning) {
+        isPanning = false;
+        this.options.container.style.cursor = 'grab';
+      }
     });
 
     this.options.container.addEventListener('click', () => {

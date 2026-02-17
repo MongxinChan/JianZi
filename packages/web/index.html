@@ -28,10 +28,22 @@
         <div class="editor-body">
             <!-- Left Toolbar -->
             <aside class="left-toolbar">
-                <div class="tool-btn active" title="Select">
-                    <span class="icon">Ref</span>
+                <!-- Tools -->
+                <div class="tool-btn active" id="tool-select" title="选择模式 (Select)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4V2z" />
+                    </svg>
                 </div>
-                <div class="tool-btn" id="add-text" title="Text">
+                <div class="tool-btn" id="tool-hand" title="抓手模式 (Hand)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path
+                            d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2v1h-1V3a2 2 0 00-2-2 2 2 0 00-2 2v4h-1V5a2 2 0 00-2-2 2 2 0 00-2 2v4h-1V8a2 2 0 00-2-2 2 2 0 00-2 2v9l-3.5-1.8a2.1 2.1 0 00-2 .6l-.5.6 7 6.4c.5.4 1.2.8 2 .8h8c1.7 0 3-1.3 3-3V13a2 2 0 00-2-2h-1z" />
+                    </svg>
+                </div>
+
+                <div class="tool-item-divider"></div>
+
+                <div class="tool-btn" id="add-text" title="插入文字">
                     <span class="icon">T</span>
                 </div>
                 <div class="tool-btn" id="add-image" title="Image">

@@ -376,3 +376,19 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     }
   });
 });
+
+// [工具栏切换]
+const toolSelectBtn = document.getElementById('tool-select');
+const toolHandBtn = document.getElementById('tool-hand');
+
+toolSelectBtn?.addEventListener('click', () => {
+  jianzi.setTool('select');
+  toolSelectBtn.classList.add('active');
+  toolHandBtn?.classList.remove('active');
+});
+
+toolHandBtn?.addEventListener('click', () => {
+  jianzi.setTool('hand');
+  toolHandBtn.classList.add('active');
+  toolSelectBtn?.classList.remove('active');
+});
