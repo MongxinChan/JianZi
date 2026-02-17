@@ -185,6 +185,32 @@ const bindToolbar = () => {
     // Return focus to canvas? Optional.
   });
 
+  // Custom Font Size Dropdown Logic
+  const ftFontSizeDropdown = document.getElementById('ft-font-size-dropdown');
+  const ftFontSizeTrigger = document.getElementById('ft-font-size-trigger');
+
+  // Toggle dropdown
+  ftFontSizeTrigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = ftFontSizeDropdown?.classList.contains('open');
+    closeAllPalettes();
+    if (!isOpen) ftFontSizeDropdown?.classList.add('open');
+  });
+
+  // Select option
+  ftFontSizeDropdown?.querySelectorAll('.ft-option').forEach(option => {
+    option.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const val = (option as HTMLElement).dataset.value;
+      if (val) {
+        ftFontSizeInput.value = val + 'px';
+        const size = parseInt(val, 10);
+        jianzi.applyStyleToSelection({ fontSize: size });
+      }
+      ftFontSizeDropdown?.classList.remove('open');
+    });
+  });
+
   // Color Palette logic
   const ftColorPalette = document.getElementById('ft-color-palette');
   const ftBgPalette = document.getElementById('ft-bg-palette');
@@ -194,6 +220,7 @@ const bindToolbar = () => {
   const closeAllPalettes = () => {
     ftColorPalette?.classList.remove('open');
     ftBgPalette?.classList.remove('open');
+    ftFontSizeDropdown?.classList.remove('open');
   };
 
   // Toggle font color palette

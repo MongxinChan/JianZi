@@ -143,27 +143,34 @@
         <button id="ft-bold" title="粗体"><b>B</b></button>
         <button id="ft-italic" title="斜体"><i>I</i></button>
         <button id="ft-underline" title="下划线"><u>U</u></button>
-        <div class="ft-input-group">
-            <input type="text" id="ft-font-size-input" list="ft-font-size-list" class="ft-font-size-input" title="字体大小"
-                value="16px">
-            <datalist id="ft-font-size-list">
-                <option value="8px"></option>
-                <option value="10px"></option>
-                <option value="12px"></option>
-                <option value="14px"></option>
-                <option value="16px"></option>
-                <option value="18px"></option>
-                <option value="20px"></option>
-                <option value="22px"></option>
-                <option value="24px"></option>
-                <option value="28px"></option>
-                <option value="32px"></option>
-                <option value="36px"></option>
-                <option value="48px"></option>
-                <option value="64px"></option>
-                <option value="72px"></option>
-                <option value="96px"></option>
-            </datalist>
+        <!-- Custom Combobox -->
+        <div class="ft-combobox" id="ft-font-size-combobox">
+            <input type="text" id="ft-font-size-input" class="ft-combobox-input" title="字体大小" value="16px"
+                autocomplete="off">
+            <button class="ft-combobox-trigger" id="ft-font-size-trigger" title="选择大小">
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="pointer-events: none;">
+                    <path d="M1 1L5 5L9 1" stroke="#666" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </button>
+            <div class="ft-combobox-dropdown" id="ft-font-size-dropdown">
+                <div class="ft-option" data-value="8">8px</div>
+                <div class="ft-option" data-value="10">10px</div>
+                <div class="ft-option" data-value="12">12px</div>
+                <div class="ft-option" data-value="14">14px</div>
+                <div class="ft-option" data-value="16">16px</div>
+                <div class="ft-option" data-value="18">18px</div>
+                <div class="ft-option" data-value="20">20px</div>
+                <div class="ft-option" data-value="22">22px</div>
+                <div class="ft-option" data-value="24">24px</div>
+                <div class="ft-option" data-value="28">28px</div>
+                <div class="ft-option" data-value="32">32px</div>
+                <div class="ft-option" data-value="36">36px</div>
+                <div class="ft-option" data-value="48">48px</div>
+                <div class="ft-option" data-value="64">64px</div>
+                <div class="ft-option" data-value="72">72px</div>
+                <div class="ft-option" data-value="96">96px</div>
+            </div>
         </div>
         <div class="separator"></div>
         <!-- Font Color Picker -->
