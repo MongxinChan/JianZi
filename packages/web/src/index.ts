@@ -173,42 +173,18 @@ const bindToolbar = () => {
     const isUnderline = !!currentStyle?.underline;
     jianzi.applyStyleToSelection({ underline: !isUnderline });
   });
-  // Font size selector
-  const ftFontSize = floatingToolbar.querySelector('#ft-font-size') as HTMLSelectElement;
-  ftFontSize?.addEventListener('change', () => {
-    if (ftFontSize.value === 'custom') {
-      const input = prompt('请输入字体大小 (如 20):', '20');
-      if (input) {
-        const size = parseInt(input, 10);
-        if (!isNaN(size) && size > 0) {
-          // Check if option exists
-          let option = null;
-          for (let i = 0; i < ftFontSize.options.length; i++) {
-            if (ftFontSize.options[i].value === size.toString()) {
-              option = ftFontSize.options[i];
-              break;
-            }
-          }
-          if (!option) {
-            // Create new option
-            option = document.createElement('option');
-            option.value = size.toString();
-            option.textContent = size + 'px';
-            // Insert before 'custom' which is last
-            ftFontSize.insertBefore(option, ftFontSize.lastElementChild);
-          }
-          ftFontSize.value = size.toString();
-          jianzi.applyStyleToSelection({ fontSize: size });
-        }
-      }
-      // If cancelled or invalid, we might want to revert, but simple is fine for now
-    } else {
-      const size = parseInt(ftFontSize.value, 10);
-      if (!isNaN(size) && size > 0) {
-        jianzi.applyStyleToSelection({ fontSize: size });
-      }
+  // Font size input (Combobox)
+  const ftFontSizeInput = floatingToolbar.querySelector('#ft-font-size-input') as HTMLInputElement;
+  ftFontSizeInput?.addEventListener('change', () => {
+    let val = ftFontSizeInput.value.toLowerCase().replace('px', '').trim();
+    const size = parseInt(val, 10);
+    if (!isNaN(size) && size > 0) {
+      ftFontSizeInput.value = size + 'px';
+      jianzi.applyStyleToSelection({ fontSize: size });
     }
+    // Return focus to canvas? Optional.
   });
+
   // Color Palette logic
   const ftColorPalette = document.getElementById('ft-color-palette');
   const ftBgPalette = document.getElementById('ft-bg-palette');
@@ -289,6 +265,12 @@ const bindToolbar = () => {
 
     if (range && delta && delta.type === 'text' && Math.abs(range.start - range.end) > 0) {
 
+      // Update font size input to match selection
+      const currentStyle = jianzi.getSelectionStyle();
+      if (ftFontSizeInput && currentStyle?.fontSize) {
+        ftFontSizeInput.value = currentStyle.fontSize + 'px';
+      }
+
       // Show Toolbar
       // Using 'any' to bypass TS check for TextDelta specific method if not imported
       if ('getRectsForRange' in delta) {
@@ -341,7 +323,7 @@ const bindToolbar = () => {
   // Prevent focus loss when clicking toolbar (except for select inputs)
   floatingToolbar.addEventListener('mousedown', (e) => {
     const target = e.target as HTMLElement;
-    if (target.tagName === 'SELECT' || target.tagName === 'OPTION') {
+    if (target.tagName === 'SELECT' || target.tagName === 'OPTION' || target.tagName === 'INPUT') {
       e.stopPropagation();
       return;
     }

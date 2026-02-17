@@ -143,31 +143,28 @@
         <button id="ft-bold" title="粗体"><b>B</b></button>
         <button id="ft-italic" title="斜体"><i>I</i></button>
         <button id="ft-underline" title="下划线"><u>U</u></button>
-        <select id="ft-font-size" title="字体大小" class="ft-font-size-select">
-            <option value="8">8px</option>
-            <option value="10">10px</option>
-            <option value="12">12px</option>
-            <option value="14">14px</option>
-            <option value="16">16px</option>
-            <option value="18">18px</option>
-            <option value="20">20px</option>
-            <option value="22">22px</option>
-            <option value="24">24px</option>
-            <option value="28">28px</option>
-            <option value="32">32px</option>
-            <option value="36">36px</option>
-            <option value="40">40px</option>
-            <option value="44">44px</option>
-            <option value="48">48px</option>
-            <option value="54">54px</option>
-            <option value="60">60px</option>
-            <option value="66">66px</option>
-            <option value="72">72px</option>
-            <option value="80">80px</option>
-            <option value="88">88px</option>
-            <option value="96">96px</option>
-            <option value="custom">自定义...</option>
-        </select>
+        <div class="ft-input-group">
+            <input type="text" id="ft-font-size-input" list="ft-font-size-list" class="ft-font-size-input" title="字体大小"
+                value="16px">
+            <datalist id="ft-font-size-list">
+                <option value="8px"></option>
+                <option value="10px"></option>
+                <option value="12px"></option>
+                <option value="14px"></option>
+                <option value="16px"></option>
+                <option value="18px"></option>
+                <option value="20px"></option>
+                <option value="22px"></option>
+                <option value="24px"></option>
+                <option value="28px"></option>
+                <option value="32px"></option>
+                <option value="36px"></option>
+                <option value="48px"></option>
+                <option value="64px"></option>
+                <option value="72px"></option>
+                <option value="96px"></option>
+            </datalist>
+        </div>
         <div class="separator"></div>
         <!-- Font Color Picker -->
         <div class="ft-color-wrap">
