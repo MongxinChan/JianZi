@@ -154,7 +154,8 @@ export class Editor {
     let isSelectingText = false;
     let isPanning = false; // [Hand Mode]
     let startPan = { x: 0, y: 0 };
-    let startScroll = { left: 0, top: 0 };
+    let panOffset = { x: 0, y: 0 }; // Current pan
+    let startPanOffset = { x: 0, y: 0 }; // Pan at start of drag
 
     let activeHandle: import('./core/InteractionLayer').HandleType = null;
     let lastX = 0;
@@ -165,6 +166,7 @@ export class Editor {
 
     const getMousePos = (e: MouseEvent) => {
       const rect = this.layerManager.getContainer().getBoundingClientRect();
+      // If we scale later, we need to account for it here. For now assume scale=1.
       return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
@@ -176,15 +178,13 @@ export class Editor {
       if (this.toolMode === 'hand') {
         isPanning = true;
         startPan = { x: e.clientX, y: e.clientY };
-        const viewport = this.options.container.parentElement;
-        if (viewport) {
-          startScroll = { left: viewport.scrollLeft, top: viewport.scrollTop };
-          this.options.container.style.cursor = 'grabbing';
-        }
+        startPanOffset = { ...panOffset };
+        this.options.container.style.cursor = 'grabbing';
         return;
       }
 
       const { x, y } = getMousePos(e);
+      // ... existing logic ...
 
       // 1) Check if we clicked on a resize handle of the currently selected delta
       if (this.selectedDeltaId) {
@@ -253,13 +253,12 @@ export class Editor {
       // [Hand Mode] Logic
       if (this.toolMode === 'hand') {
         if (isPanning) {
-          const viewport = this.options.container.parentElement;
-          if (viewport) {
-            const dx = e.clientX - startPan.x;
-            const dy = e.clientY - startPan.y;
-            viewport.scrollLeft = startScroll.left - dx;
-            viewport.scrollTop = startScroll.top - dy;
-          }
+          const dx = e.clientX - startPan.x;
+          const dy = e.clientY - startPan.y;
+          panOffset.x = startPanOffset.x + dx;
+          panOffset.y = startPanOffset.y + dy;
+
+          this.options.container.style.transform = `translate(${panOffset.x}px, ${panOffset.y}px)`;
         }
         return;
       }
