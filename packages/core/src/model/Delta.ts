@@ -282,9 +282,10 @@ export class TextDelta extends Delta {
                 // Distance from LTR Left to Column Right is `cx + colWidth`.
                 // In RTL, this becomes Distance from RTL Right to Column Left? 
                 // Let's use simpler math:
-                // RTL X = TotalWidth - (cx + colWidth).
-                // Abs X = this.x + RTL X.
-                const rtlX = layout.totalWidth - (cx + (colWidth || width));
+                // RTL Logic matching draw()
+                // Use layoutConstraintW if set, otherwise totalWidth
+                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+                const rtlX = boxWidth - (cx + (colWidth || width));
                 drawX = this.x + rtlX;
 
                 // Center align char in column if charWidth < colWidth
@@ -369,10 +370,9 @@ export class TextDelta extends Delta {
 
             if (mode === 'vertical') {
                 // RTL Logic matching draw()
-                // drawX = this.x + (totalWidth - (cx + (colWidth || width)))
-                // So relative X = totalWidth - (cx + (colWidth || width))
-                // Center alignment: + (colWidth - width)/2
-                const rtlX = layout.totalWidth - (cx + (colWidth || width));
+                // Use layoutConstraintW if set, otherwise totalWidth
+                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+                const rtlX = boxWidth - (cx + (colWidth || width));
                 targetX = rtlX;
                 if (colWidth && width < colWidth) {
                     targetX += (colWidth - width) / 2;
@@ -425,7 +425,8 @@ export class TextDelta extends Delta {
             let drawH = height;
 
             if (mode === 'vertical') {
-                const rtlX = layout.totalWidth - (cx + (colWidth || width));
+                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+                const rtlX = boxWidth - (cx + (colWidth || width));
                 drawX = this.x + rtlX;
                 // Full column width for selection looks better?
                 // Or just char width?
