@@ -18,12 +18,21 @@ export class Editor {
   public selectionRange: { start: number; end: number } | null = null;
   private currentFont: string = "'STKaiti', 'KaiTi', serif";
   public toolMode: 'select' | 'hand' = 'select';
+  // [Infinite Panning]
+  private viewportTransform = { x: 0, y: 0, scale: 1 };
 
   constructor(options: JianZiOptions) {
     this.options = options;
     this.deltas = new DeltaSet();
     this.layerManager = new LayerManager(options);
     this.initInputBridge();
+  }
+
+  // [Infinite Panning]
+  private updateViewportTransform(): void {
+    const { x, y, scale } = this.viewportTransform;
+    this.options.container.style.transform =
+      `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`;
   }
 
   public setTool(mode: 'select' | 'hand'): void {
@@ -154,11 +163,7 @@ export class Editor {
     let isSelectingText = false;
     let isPanning = false; // [Hand Mode]
     let startPan = { x: 0, y: 0 };
-    // let startScroll = { left: 0, top: 0 }; 
-    // Use Transform instead of Scroll
-    let translateX = 0;
-    let translateY = 0;
-    let startTranslate = { x: 0, y: 0 };
+    let startScroll = { left: 0, top: 0 };
 
     let activeHandle: import('./core/InteractionLayer').HandleType = null;
     let lastX = 0;
@@ -169,14 +174,10 @@ export class Editor {
 
     const getMousePos = (e: MouseEvent) => {
       const rect = this.layerManager.getContainer().getBoundingClientRect();
-      // Note: rect includes transform, so we need to be careful if we utilize scale.
-      // But for translation, (clientX - rect.left) gives coordinate relative to the *top-left of the element*.
-      // If element is translated, rect.left moves.
-      // So (clientX - rect.left) is always local coordinate (0,0 at top-left of canvas).
-      // This is correct for hit testing.
+      const scale = this.viewportTransform.scale;
       return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: (e.clientX - rect.left) / scale,
+        y: (e.clientY - rect.top) / scale
       };
     };
 
@@ -185,7 +186,8 @@ export class Editor {
       if (this.toolMode === 'hand') {
         isPanning = true;
         startPan = { x: e.clientX, y: e.clientY };
-        startTranslate = { x: translateX, y: translateY };
+        // Store current transform
+        startScroll = { left: this.viewportTransform.x, top: this.viewportTransform.y };
         this.options.container.style.cursor = 'grabbing';
         return;
       }
@@ -261,9 +263,10 @@ export class Editor {
         if (isPanning) {
           const dx = e.clientX - startPan.x;
           const dy = e.clientY - startPan.y;
-          translateX = startTranslate.x + dx;
-          translateY = startTranslate.y + dy;
-          this.options.container.style.transform = `translate(${translateX}px, ${translateY}px)`;
+
+          this.viewportTransform.x = startScroll.left + dx;
+          this.viewportTransform.y = startScroll.top + dy;
+          this.updateViewportTransform();
         }
         return;
       }
