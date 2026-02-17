@@ -250,8 +250,8 @@ export class TextDelta extends Delta {
     measure(ctx: CanvasRenderingContext2D, mode: LayoutMode = 'horizontal', areaWidth: number = 9999, areaHeight: number = 9999): { width: number; height: number } {
         const layout = this._layout(mode, areaWidth, areaHeight);
         return {
-            width: layout.totalWidth,
-            height: layout.totalHeight,
+            width: this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth,
+            height: this.layoutConstraintH > 0 ? this.layoutConstraintH : layout.totalHeight,
         };
     }
 
@@ -264,9 +264,9 @@ export class TextDelta extends Delta {
         const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
         const layout = this._layout(mode, layoutW, layoutH);
 
-        // Always update bounding box from actual content
-        this.width = layout.totalWidth;
-        this.height = layout.totalHeight;
+        // Always update bounding box from actual content, but respect manual resize
+        this.width = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+        this.height = this.layoutConstraintH > 0 ? this.layoutConstraintH : layout.totalHeight;
 
         for (const pos of layout.positions) {
             const { cx, cy, style, char, width, height, colWidth, rowHeight } = pos;
