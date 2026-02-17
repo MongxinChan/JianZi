@@ -176,9 +176,37 @@ const bindToolbar = () => {
   // Font size selector
   const ftFontSize = floatingToolbar.querySelector('#ft-font-size') as HTMLSelectElement;
   ftFontSize?.addEventListener('change', () => {
-    const size = parseInt(ftFontSize.value, 10);
-    if (size >= 8 && size <= 24) {
-      jianzi.applyStyleToSelection({ fontSize: size });
+    if (ftFontSize.value === 'custom') {
+      const input = prompt('请输入字体大小 (如 20):', '20');
+      if (input) {
+        const size = parseInt(input, 10);
+        if (!isNaN(size) && size > 0) {
+          // Check if option exists
+          let option = null;
+          for (let i = 0; i < ftFontSize.options.length; i++) {
+            if (ftFontSize.options[i].value === size.toString()) {
+              option = ftFontSize.options[i];
+              break;
+            }
+          }
+          if (!option) {
+            // Create new option
+            option = document.createElement('option');
+            option.value = size.toString();
+            option.textContent = size + 'px';
+            // Insert before 'custom' which is last
+            ftFontSize.insertBefore(option, ftFontSize.lastElementChild);
+          }
+          ftFontSize.value = size.toString();
+          jianzi.applyStyleToSelection({ fontSize: size });
+        }
+      }
+      // If cancelled or invalid, we might want to revert, but simple is fine for now
+    } else {
+      const size = parseInt(ftFontSize.value, 10);
+      if (!isNaN(size) && size > 0) {
+        jianzi.applyStyleToSelection({ fontSize: size });
+      }
     }
   });
   // Color Palette logic
@@ -310,8 +338,13 @@ const bindToolbar = () => {
   document.addEventListener('mouseup', () => requestAnimationFrame(updateToolbar));
   document.addEventListener('keyup', () => requestAnimationFrame(updateToolbar));
 
-  // Prevent focus loss when clicking toolbar
+  // Prevent focus loss when clicking toolbar (except for select inputs)
   floatingToolbar.addEventListener('mousedown', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'SELECT' || target.tagName === 'OPTION') {
+      e.stopPropagation();
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
   });
