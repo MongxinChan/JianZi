@@ -54,33 +54,7 @@ document.querySelector('#clear')?.addEventListener('click', () => {
   }
 });
 
-// [布局联动：内边距]
-document.querySelector('#padding')?.addEventListener('input', (e) => {
-  const target = e.target as HTMLInputElement;
-  // 实时更新配置
-  jianzi.updateOptions({ padding: parseInt(target.value) });
-  // 更新 UI 显示数值
-  const display = target.nextElementSibling;
-  if (display) display.textContent = target.value;
-});
 
-// [字体选择] - Moved and modified from original position
-document.getElementById('font-family')?.addEventListener('change', (e) => {
-  const selectElement = e.target as HTMLSelectElement;
-  jianzi.setFont(selectElement.value);
-});
-
-
-// [布局联动：格线透明度]
-document.querySelector('#grid-opacity')?.addEventListener('input', (e) => {
-  const target = e.target as HTMLInputElement;
-  const currentGrid = jianzi.getOptions().grid || { type: 'line', color: '#cc0000' };
-
-  // 深度合并 grid 对象
-  jianzi.updateOptions({
-    grid: { ...currentGrid, opacity: parseFloat(target.value) }
-  });
-});
 
 // [布局联动：排版模式]
 const radioInputs = document.querySelectorAll('input[name="layout-mode"]');
@@ -299,6 +273,11 @@ const bindToolbar = () => {
           const size = currentStyle?.fontSize;
           ftFontSizeInput.value = size ? (size + 'px') : '';
         }
+      }
+
+      // Update font family select
+      if (fontSelect && currentStyle?.fontFamily) {
+        fontSelect.value = currentStyle.fontFamily;
       }
 
       // Show Toolbar
