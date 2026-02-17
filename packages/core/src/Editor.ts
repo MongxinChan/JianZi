@@ -427,13 +427,37 @@ export class Editor {
   /**
    * 设置所有文本的字体
    */
+  /**
+   * 设置字体 (支持选区操作)
+   */
   public setFont(fontFamily: string): void {
     this.currentFont = fontFamily;
-    this.deltas.forEach(delta => {
+
+    if (this.selectedDeltaId) {
+      const delta = this.deltas.get(this.selectedDeltaId);
       if (delta instanceof TextDelta) {
-        delta.fontFamily = fontFamily;
+        // Mode 1: Text Editing (Range Selection)
+        if (this.selectionRange) {
+          const start = Math.min(this.selectionRange.start, this.selectionRange.end);
+          const end = Math.max(this.selectionRange.start, this.selectionRange.end);
+
+          if (start < end) {
+            delta.applyStyle(start, end, { fontFamily });
+          } else {
+            // Cursor mode: Insert style? 
+            // For now just update currentFont implies next char will use it (if logic in handleInput uses currentFont)
+          }
+        }
+        // Mode 2: Object Selection (No active text editing range)
+        else {
+          // Apply to whole text
+          delta.applyStyle(0, delta.content.length, { fontFamily });
+          // Also update fallback
+          delta.fontFamily = fontFamily;
+        }
       }
-    });
+    }
+
     this.refresh();
   }
 

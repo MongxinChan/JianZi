@@ -503,6 +503,91 @@ export class TextDelta extends Delta {
         return commonStyle;
     }
 
+    /**
+     * Apply style to a range of text.
+     * Splits fragments as necessary.
+     */
+    public applyStyle(start: number, end: number, style: Partial<CharStyle>) {
+        if (start >= end) return;
+
+        const newFragments: RichContent = [];
+        let cursor = 0;
+
+        for (const fragment of this.fragments) {
+            const len = fragment.text.length;
+            const fragStart = cursor;
+            const fragEnd = cursor + len;
+
+            // 1. Fragment completely before range
+            if (fragEnd <= start) {
+                newFragments.push(fragment);
+            }
+            // 2. Fragment completely after range
+            else if (fragStart >= end) {
+                newFragments.push(fragment);
+            }
+            // 3. Overlap
+            else {
+                // Split if needed
+                const overlapStart = Math.max(fragStart, start);
+                const overlapEnd = Math.min(fragEnd, end);
+
+                // Part before range
+                if (fragStart < overlapStart) {
+                    newFragments.push({
+                        text: fragment.text.substring(0, overlapStart - fragStart),
+                        style: { ...fragment.style }
+                    });
+                }
+
+                // Part inside range
+                newFragments.push({
+                    text: fragment.text.substring(overlapStart - fragStart, overlapEnd - fragStart),
+                    style: { ...fragment.style, ...style }
+                });
+
+                // Part after range
+                if (fragEnd > overlapEnd) {
+                    newFragments.push({
+                        text: fragment.text.substring(overlapEnd - fragStart),
+                        style: { ...fragment.style }
+                    });
+                }
+            }
+            cursor += len;
+        }
+
+        // Merge adjacent identical styles
+        this.fragments = this._mergeFragments(newFragments);
+    }
+
+    private _mergeFragments(fragments: RichContent): RichContent {
+        if (fragments.length === 0) return [];
+        const merged: RichContent = [fragments[0]];
+
+        for (let i = 1; i < fragments.length; i++) {
+            const prev = merged[merged.length - 1];
+            const curr = fragments[i];
+
+            if (this._isStyleEqual(prev.style, curr.style)) {
+                prev.text += curr.text;
+            } else {
+                merged.push(curr);
+            }
+        }
+        return merged;
+    }
+
+    private _isStyleEqual(s1: CharStyle, s2: CharStyle): boolean {
+        const k1 = Object.keys(s1).sort();
+        const k2 = Object.keys(s2).sort();
+        if (k1.length !== k2.length) return false;
+
+        // Use loose check or JSON stringify?
+        // JSON stringify is easy for simple objects
+        return JSON.stringify(s1) === JSON.stringify(s2);
+    }
+
     public getStyleAt(index: number): import('./RichText').CharStyle | null {
         let cursor = 0;
         for (const fragment of this.fragments) {
