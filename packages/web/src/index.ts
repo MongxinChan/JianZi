@@ -294,9 +294,10 @@ const bindToolbar = () => {
 
       // Update font size input to match selection
       const currentStyle = jianzi.getSelectionStyle();
-      if (ftFontSizeInput && currentStyle?.fontSize) {
+      if (ftFontSizeInput) {
         if (document.activeElement !== ftFontSizeInput) {
-          ftFontSizeInput.value = currentStyle.fontSize + 'px';
+          const size = currentStyle?.fontSize;
+          ftFontSizeInput.value = size ? (size + 'px') : '';
         }
       }
 

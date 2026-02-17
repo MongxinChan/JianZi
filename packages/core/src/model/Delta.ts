@@ -466,6 +466,42 @@ export class TextDelta extends Delta {
         return rects;
     }
 
+    public getCommonStyle(start: number, end: number): Partial<import('./RichText').CharStyle> | null {
+        if (start >= end) return null;
+
+        let commonStyle: Partial<import('./RichText').CharStyle> | null = null;
+        let cursor = 0;
+        let hasOverlap = false;
+
+        for (const fragment of this.fragments) {
+            const len = fragment.text.length;
+            const fragStart = cursor;
+            const fragEnd = cursor + len;
+
+            // Check overlap
+            if (fragEnd > start && fragStart < end) {
+                const style = this._getEffectiveStyle(fragment.style);
+
+                if (!hasOverlap) {
+                    // First fragment in range
+                    commonStyle = { ...style };
+                    hasOverlap = true;
+                } else if (commonStyle) {
+                    // Compare with existing commonStyle and remove mismatches
+                    (Object.keys(commonStyle) as Array<keyof import('./RichText').CharStyle>).forEach(key => {
+                        if (commonStyle![key] !== style[key]) {
+                            delete commonStyle![key];
+                        }
+                    });
+                }
+            }
+            cursor += len;
+            if (cursor >= end) break;
+        }
+
+        return commonStyle;
+    }
+
     public getStyleAt(index: number): import('./RichText').CharStyle | null {
         let cursor = 0;
         for (const fragment of this.fragments) {

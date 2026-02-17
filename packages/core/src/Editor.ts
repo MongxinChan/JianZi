@@ -521,8 +521,12 @@ export class Editor {
     if (this.selectedDeltaId && this.selectionRange) {
       const delta = this.deltas.get(this.selectedDeltaId);
       if (delta instanceof TextDelta) {
-        const index = Math.min(this.selectionRange.start, this.selectionRange.end);
-        return delta.getStyleAt(index);
+        const start = Math.min(this.selectionRange.start, this.selectionRange.end);
+        const end = Math.max(this.selectionRange.start, this.selectionRange.end);
+        if (start === end) {
+          return delta.getStyleAt(start);
+        }
+        return delta.getCommonStyle(start, end);
       }
     }
     return null;
