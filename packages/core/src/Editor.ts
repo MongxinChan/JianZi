@@ -4,6 +4,11 @@ import { Delta, TextDelta, ImageDelta } from './model/Delta';
 import { LayerManager } from './core/LayerManager';
 import { InteractionLayer } from './core/InteractionLayer';
 import { applyStyleToContent, CharStyle } from './model/RichText';
+import { ToolState } from './state/ToolState';
+import { GrabState } from './state/GrabState';
+import { SelectState } from './state/SelectState';
+import { HistoryManager } from './history/HistoryManager';
+import { AddOp, UpdateOp } from './history/Operation';
 
 /**
  * 编辑器交互类：负责处理用户输入、状态管理与渲染同步
@@ -21,28 +26,73 @@ export class Editor {
   // [Infinite Panning]
   private viewportTransform = { x: 0, y: 0, scale: 1 };
 
+  // States
+  private states: Record<string, ToolState> = {};
+  private activeState: ToolState | null = null;
+
+  // History
+  public history: HistoryManager;
+
   constructor(options: JianZiOptions) {
     this.options = options;
     this.deltas = new DeltaSet();
     this.layerManager = new LayerManager(options);
+    this.history = new HistoryManager(this);
+
+    // Initialize states
+    this.states = {
+      'select': new SelectState(this),
+      'hand': new GrabState(this)
+    };
+
     this.initInputBridge();
+    this.setTool('select');
+  }
+
+  public getViewportTransform() {
+    return this.viewportTransform;
+  }
+
+  public setViewportTransform(x: number, y: number, scale?: number) {
+    this.viewportTransform.x = x;
+    this.viewportTransform.y = y;
+    if (scale !== undefined) this.viewportTransform.scale = scale;
+    this.updateViewportTransform();
+  }
+
+  public getLayerManager() {
+    return this.layerManager;
+  }
+
+  public getInputElement() {
+    return this.inputElement;
   }
 
   // [Infinite Panning]
   private updateViewportTransform(): void {
     const { x, y, scale } = this.viewportTransform;
-    this.options.container.style.transform =
+    // Apply transform to parent (.canvas-container) if eventTarget is used, 
+    // to preserve the .canvas-container's role as the moving wrapper.
+    const target = (this.options.eventTarget && this.options.container.parentElement)
+      ? this.options.container.parentElement
+      : this.options.container;
+
+    target.style.transform =
       `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`;
   }
 
   public setTool(mode: 'select' | 'hand'): void {
+    if (this.toolMode === mode && this.activeState) return;
+
+    if (this.activeState) {
+      this.activeState.onDisable();
+    }
+
     this.toolMode = mode;
-    // Reset selection if switching to hand?
-    // Maybe keep selection but disable interaction.
-    if (mode === 'hand') {
-      this.options.container.style.cursor = 'grab';
-    } else {
-      this.options.container.style.cursor = 'default';
+    this.activeState = this.states[mode];
+
+    if (this.activeState) {
+      this.activeState.onEnable();
     }
   }
 
@@ -55,10 +105,17 @@ export class Editor {
     if (this.inputElement) {
       this.inputElement.value = '';
     }
+    this.history.clear();
     this.refresh();
   }
 
+  public undo(): void {
+    this.history.undo();
+  }
 
+  public redo(): void {
+    this.history.redo();
+  }
 
   /**
    * 导出当前画布内容为图片
@@ -157,267 +214,40 @@ export class Editor {
       }
     };
 
-    // Mouse Interaction Logic
-    let isDragging = false;
-    let isResizing = false;
-    let isSelectingText = false;
-    let isPanning = false; // [Hand Mode]
-    let startPan = { x: 0, y: 0 };
-    let startScroll = { left: 0, top: 0 };
+    const eventBase = (this.options.eventTarget as HTMLElement | Window | Document) || this.options.container;
 
-    let activeHandle: import('./core/InteractionLayer').HandleType = null;
-    let lastX = 0;
-    let lastY = 0;
-    // Store original delta rect at the start of resize
-    let resizeStartRect: { x: number; y: number; width: number; height: number } | null = null;
-    let resizeStartMouse: { x: number; y: number } | null = null;
+    // Mouse Interaction Delegated to activeState
+    eventBase.addEventListener('mousedown', ((e: Event) => {
+      // Only process layout logic if clicking outside active layers? Handled in SelectState.
+      if (this.activeState) this.activeState.onMouseDown(e as MouseEvent);
+    }) as EventListener);
 
-    const getMousePos = (e: MouseEvent) => {
-      const rect = this.layerManager.getContainer().getBoundingClientRect();
-      const scale = this.viewportTransform.scale;
-      return {
-        x: (e.clientX - rect.left) / scale,
-        y: (e.clientY - rect.top) / scale
-      };
-    };
+    eventBase.addEventListener('mousemove', ((e: Event) => {
+      if (this.activeState) this.activeState.onMouseMove(e as MouseEvent);
+    }) as EventListener);
 
-    this.options.container.addEventListener('mousedown', (e) => {
-      // [Hand Mode] Logic
-      if (this.toolMode === 'hand') {
-        isPanning = true;
-        startPan = { x: e.clientX, y: e.clientY };
-        // Store current transform
-        startScroll = { left: this.viewportTransform.x, top: this.viewportTransform.y };
-        this.options.container.style.cursor = 'grabbing';
-        return;
-      }
+    eventBase.addEventListener('mouseup', ((e: Event) => {
+      if (this.activeState) this.activeState.onMouseUp(e as MouseEvent);
+    }) as EventListener);
 
-      const { x, y } = getMousePos(e);
+    // [Infinite Panning] Wheel Support (Trackpad/Mouse Wheel)
+    eventBase.addEventListener('wheel', ((e: Event) => {
+      if (this.activeState) this.activeState.onWheel(e as WheelEvent);
+    }) as EventListener, { passive: false });
 
-      // 1) Check if we clicked on a resize handle of the currently selected delta
-      if (this.selectedDeltaId) {
-        const handle = this.layerManager.interactionLayer.hitTestHandle(x, y);
-        if (handle) {
-          isResizing = true;
-          activeHandle = handle;
-          const delta = this.deltas.get(this.selectedDeltaId);
-          if (delta) {
-            resizeStartRect = { x: delta.x, y: delta.y, width: delta.width, height: delta.height };
-            resizeStartMouse = { x, y };
-          }
-          return; // Don't process as a regular click
+    // Keyboard shortcuts for Undo/Redo
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          this.redo();
+        } else {
+          this.undo();
         }
+        e.preventDefault();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        this.redo();
+        e.preventDefault();
       }
-
-      // 2) Check Text Selection (Click on selected text)
-      const hitDelta = this.deltas.hitTest(x, y);
-      if (hitDelta && this.selectedDeltaId === hitDelta.id && hitDelta instanceof TextDelta) {
-        const idx = hitDelta.getCharIndexAt(
-          // @ts-ignore
-          this.layerManager.canvasLayer.ctx,
-          x, y, this.options.mode || 'vertical',
-          this.layerManager.canvasLayer.width,
-          this.layerManager.canvasLayer.height
-        );
-        if (idx !== -1) {
-          isSelectingText = true;
-          this.selectionRange = { start: idx, end: idx };
-          isDragging = false; // Prevent dragging
-          this.refresh();
-          return;
-        }
-      }
-
-      // 3) Otherwise, normal select/drag logic
-      const delta = hitDelta;
-
-      // Deselect all
-      this.deltas.forEach(d => d.selected = false);
-
-      if (delta) {
-        delta.selected = true;
-        this.selectedDeltaId = delta.id;
-        isDragging = true;
-        lastX = x;
-        lastY = y;
-        this.selectionRange = null; // Reset text selection on new delta select
-
-        // Focus input if text (to allow editing)
-        if (delta.type === 'text') {
-          if (this.inputElement) {
-            this.inputElement.value = (delta as TextDelta).content;
-            setTimeout(() => this.inputElement?.focus(), 0);
-          }
-        }
-      } else {
-        this.selectedDeltaId = null;
-        this.selectionRange = null;
-        setTimeout(() => this.inputElement?.focus(), 0);
-      }
-      this.refresh();
-    });
-
-    this.options.container.addEventListener('mousemove', (e) => {
-      // [Hand Mode] Logic
-      if (this.toolMode === 'hand') {
-        if (isPanning) {
-          const dx = e.clientX - startPan.x;
-          const dy = e.clientY - startPan.y;
-
-          this.viewportTransform.x = startScroll.left + dx;
-          this.viewportTransform.y = startScroll.top + dy;
-          this.updateViewportTransform();
-        }
-        return;
-      }
-
-      const { x, y } = getMousePos(e);
-
-      // --- Resize mode ---
-      if (isResizing && this.selectedDeltaId && resizeStartRect && resizeStartMouse && activeHandle) {
-        const dx = x - resizeStartMouse.x;
-        const dy = y - resizeStartMouse.y;
-        const delta = this.deltas.get(this.selectedDeltaId);
-        if (!delta) return;
-
-        const r = resizeStartRect;
-        let newX = r.x, newY = r.y, newW = r.width, newH = r.height;
-
-        switch (activeHandle) {
-          case 'br':
-            newW = Math.max(20, r.width + dx);
-            newH = Math.max(20, r.height + dy);
-            break;
-          case 'bl':
-            newW = Math.max(20, r.width - dx);
-            newH = Math.max(20, r.height + dy);
-            newX = r.x + r.width - newW;
-            break;
-          case 'tr':
-            newW = Math.max(20, r.width + dx);
-            newH = Math.max(20, r.height - dy);
-            newY = r.y + r.height - newH;
-            break;
-          case 'tl':
-            newW = Math.max(20, r.width - dx);
-            newH = Math.max(20, r.height - dy);
-            newX = r.x + r.width - newW;
-            newY = r.y + r.height - newH;
-            break;
-          case 'mr':
-            newW = Math.max(20, r.width + dx);
-            break;
-          case 'ml':
-            newW = Math.max(20, r.width - dx);
-            newX = r.x + r.width - newW;
-            break;
-          case 'mb':
-            newH = Math.max(20, r.height + dy);
-            break;
-          case 'mt':
-            newH = Math.max(20, r.height - dy);
-            newY = r.y + r.height - newH;
-            break;
-        }
-
-        // For ImageDelta: lock aspect ratio
-        if (delta instanceof ImageDelta) {
-          const aspect = resizeStartRect.width / resizeStartRect.height;
-          if (activeHandle === 'br' || activeHandle === 'tl') {
-            // Use the larger magnitude delta for aspect-ratio lock
-            if (Math.abs(dx) > Math.abs(dy)) {
-              newH = newW / aspect;
-            } else {
-              newW = newH * aspect;
-            }
-          } else {
-            if (Math.abs(dx) > Math.abs(dy)) {
-              newH = newW / aspect;
-            } else {
-              newW = newH * aspect;
-            }
-          }
-          // Recalculate position for TL/BL/TR handles
-          if (activeHandle === 'tl') {
-            newX = r.x + r.width - newW;
-            newY = r.y + r.height - newH;
-          } else if (activeHandle === 'bl') {
-            newX = r.x + r.width - newW;
-          } else if (activeHandle === 'tr') {
-            newY = r.y + r.height - newH;
-          }
-        }
-
-        delta.x = newX;
-        delta.y = newY;
-        delta.width = newW;
-        delta.height = newH;
-        // For text deltas, set layout constraints so text reflows within the resized area
-        if (delta instanceof TextDelta) {
-          delta.layoutConstraintW = newW;
-          delta.layoutConstraintH = newH;
-        }
-        this.refresh();
-        return;
-      }
-
-      // --- Text Selection mode ---
-      if (isSelectingText && this.selectedDeltaId && this.selectionRange) {
-        const delta = this.deltas.get(this.selectedDeltaId);
-        if (delta instanceof TextDelta) {
-          const idx = delta.getCharIndexAt(
-            // @ts-ignore
-            this.layerManager.canvasLayer.ctx,
-            x, y, this.options.mode || 'vertical',
-            this.layerManager.canvasLayer.width,
-            this.layerManager.canvasLayer.height
-          );
-          if (idx !== -1) {
-            this.selectionRange.end = idx;
-            this.refresh();
-          }
-        }
-        return;
-      }
-
-      // --- Drag mode ---
-      if (isDragging && this.selectedDeltaId) {
-        const dx = x - lastX;
-        const dy = y - lastY;
-        const delta = this.deltas.get(this.selectedDeltaId);
-        if (delta) {
-          delta.move(dx, dy);
-          this.refresh();
-        }
-        lastX = x;
-        lastY = y;
-        return;
-      }
-
-      // --- Hover: show resize cursor on handles ---
-      const handle = this.layerManager.interactionLayer.hitTestHandle(x, y);
-      this.options.container.style.cursor = handle
-        ? InteractionLayer.getCursor(handle)
-        : 'default';
-    });
-
-    this.options.container.addEventListener('mouseup', () => {
-      isDragging = false;
-      isResizing = false;
-      isSelectingText = false;
-      activeHandle = null;
-      resizeStartRect = null;
-      resizeStartMouse = null;
-
-      // [Hand Mode]
-      if (isPanning) {
-        isPanning = false;
-        this.options.container.style.cursor = 'grab';
-      }
-    });
-
-    this.options.container.addEventListener('click', () => {
-      // Click logic handled in mousedown for now
     });
   }
 
@@ -491,6 +321,12 @@ export class Editor {
     if (this.selectedDeltaId) {
       const delta = this.deltas.get(this.selectedDeltaId);
       if (delta instanceof TextDelta) {
+        // Deep copy old state of text delta manually since it has nested objects
+        const oldState = {
+          fontFamily: delta.fontFamily,
+          fragments: JSON.parse(JSON.stringify(delta.fragments))
+        } as Partial<Delta>;
+
         // Mode 1: Text Editing (Range Selection)
         if (this.selectionRange) {
           const start = Math.min(this.selectionRange.start, this.selectionRange.end);
@@ -510,6 +346,12 @@ export class Editor {
           // Also update fallback
           delta.fontFamily = fontFamily;
         }
+
+        const newState = {
+          fontFamily: delta.fontFamily,
+          fragments: JSON.parse(JSON.stringify(delta.fragments))
+        } as Partial<Delta>;
+        this.history.push([new UpdateOp(delta.id, oldState, newState)]);
       }
     }
 
@@ -536,6 +378,7 @@ export class Editor {
       fontSize: 28,
     });
     this.deltas.add(textDelta);
+    this.history.push([new AddOp(textDelta)]);
     // Select the new text box
     this.deltas.forEach(d => d.selected = false);
     textDelta.selected = true;
@@ -572,6 +415,7 @@ export class Editor {
       },
     );
     this.deltas.add(imgDelta);
+    this.history.push([new AddOp(imgDelta)]);
     this.selectedDeltaId = imgDelta.id;
     imgDelta.selected = true;
     this.refresh();
@@ -587,9 +431,15 @@ export class Editor {
         const s = Math.min(start, end);
         const e = Math.max(start, end) + 1;
 
+        const oldState = { fragments: JSON.parse(JSON.stringify(delta.fragments)) } as Partial<Delta>;
+
         delta.fragments = applyStyleToContent(
           delta.fragments, s, e, style
         );
+
+        const newState = { fragments: JSON.parse(JSON.stringify(delta.fragments)) } as Partial<Delta>;
+        this.history.push([new UpdateOp(delta.id, oldState, newState)]);
+
         this.refresh();
       }
     }
