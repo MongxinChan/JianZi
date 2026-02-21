@@ -8,6 +8,7 @@ if (!container) throw new Error("找不到 #app 容器");
 
 const jianzi = new Editor({
   container: container as HTMLElement,
+  eventTarget: document.querySelector('.viewport') as HTMLElement,
   width: 500, // 稍微缩小尺寸，让呼吸感更强
   height: 700,
   padding: 60,
@@ -52,6 +53,15 @@ document.querySelector('#clear')?.addEventListener('click', () => {
   if (confirm('确定要清空画纸吗？')) {
     jianzi.clear();
   }
+});
+
+// [撤销/重做功能]
+document.querySelector('#undo')?.addEventListener('click', () => {
+  jianzi.undo();
+});
+
+document.querySelector('#redo')?.addEventListener('click', () => {
+  jianzi.redo();
 });
 
 // [布局联动：排版模式]
