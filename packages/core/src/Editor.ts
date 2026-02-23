@@ -155,6 +155,8 @@ export class Editor {
           height: d.height,
           src: d.src,
           drawMode: d.drawMode,
+          borderColor: d.borderColor,
+          borderWidth: d.borderWidth,
         };
       }
       return null;
@@ -224,6 +226,8 @@ export class Editor {
               height: raw.height,
               src: raw.src,
               drawMode: raw.drawMode ?? 'cover',
+              borderColor: raw.borderColor ?? 'transparent',
+              borderWidth: raw.borderWidth ?? 0,
             },
             () => this.refresh(),
           );

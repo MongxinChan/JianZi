@@ -611,17 +611,26 @@ export class ImageDelta extends Delta {
     public src: string;
     public aspectRatio: number = 1;
     public drawMode: ImageDrawMode = 'cover';
+    public borderColor: string = 'transparent';
+    public borderWidth: number = 0;
     private _img: HTMLImageElement | null = null;
     private _loaded: boolean = false;
     private _onLoadCallback: (() => void) | null = null;
 
     constructor(
-        attr: Omit<DeltaLike, 'type'> & { src: string; drawMode?: ImageDrawMode },
+        attr: Omit<DeltaLike, 'type'> & {
+            src: string;
+            drawMode?: ImageDrawMode;
+            borderColor?: string;
+            borderWidth?: number;
+        },
         onLoad?: () => void,
     ) {
         super({ ...attr, type: DeltaType.Image });
         this.src = attr.src;
         this.drawMode = attr.drawMode ?? 'cover';
+        this.borderColor = attr.borderColor ?? 'transparent';
+        this.borderWidth = attr.borderWidth ?? 0;
         this._onLoadCallback = onLoad || null;
         this._loadImage();
     }
@@ -704,6 +713,17 @@ export class ImageDelta extends Delta {
         }
 
         ctx.restore();
+
+        // Draw border on top (always, regardless of draw mode)
+        if (this.borderWidth > 0 && this.borderColor && this.borderColor !== 'transparent') {
+            ctx.save();
+            ctx.strokeStyle = this.borderColor;
+            ctx.lineWidth = this.borderWidth;
+            // Inset the stroke so it doesn't bleed outside the box
+            const half = this.borderWidth / 2;
+            ctx.strokeRect(x + half, y + half, w - this.borderWidth, h - this.borderWidth);
+            ctx.restore();
+        }
     }
 
     /** Resize while preserving aspect ratio */
