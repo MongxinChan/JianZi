@@ -1,9 +1,6 @@
-/**
- * 排版模式定义
- * vertical: 传统中式竖排（从右上角开始，向左换列）
- * horizontal: 现代横排模式（从左上角开始，向下换行）
- */
-export type LayoutMode = 'vertical' | 'horizontal';
+import type { LayoutMode } from './model/Delta';
+export type { LayoutMode };
+
 
 /** 
  * 信笺格线样式
