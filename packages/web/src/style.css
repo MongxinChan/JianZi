@@ -283,7 +283,7 @@ svg {
 .toggle-right-btn {
   position: absolute;
   left: -24px;
-  top: 50%;
+  top: 40%;
   transform: translateY(-50%);
   width: 24px;
   height: 48px;
