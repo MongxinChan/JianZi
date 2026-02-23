@@ -47,6 +47,18 @@ export interface JianZiOptions {
   /** 是否有网格 */
   grid?: GridOptions;
 
+  /** 画布背景颜色 (Hex/RGBA) */
+  backgroundColor?: string;
+
+  /** 是否显示水印 */
+  watermark?: boolean;
+
+  /** 第一作者盖章 (JianZi) 是否显示 */
+  dateDisplay?: 'none' | 'gregorian' | 'lunar';
+
+  /** 是否精确显示到某某日 */
+  dateIncludeDay?: boolean;
+
   /** 用于绑定全局事件的容器（如 viewport），默认回退到 container */
   eventTarget?: HTMLElement | Window | Document;
 }

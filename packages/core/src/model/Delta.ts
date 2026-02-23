@@ -170,7 +170,24 @@ export class TextDelta extends Delta {
 
                 const chars = fragment.text.split('');
                 for (const char of chars) {
-                    if (currentY + charH > (areaHeight - this.y) && currentY > 0) {
+                    if (char === '\n') {
+                        if (colWidth === 0) colWidth = charW;
+
+                        // Push an invisible space to represent the newline so the line exists
+                        colBuffer.push({
+                            char: ' ',
+                            cx: currentX,
+                            cy: currentY,
+                            width: charW,
+                            height: charH,
+                            style
+                        });
+
+                        flushColumn();
+                        continue;
+                    }
+
+                    if (currentY + charH > areaHeight && currentY > 0) {
                         flushColumn();
                     }
 
@@ -222,7 +239,24 @@ export class TextDelta extends Delta {
 
                 const chars = fragment.text.split('');
                 for (const char of chars) {
-                    if (currentX + charW > (areaWidth - this.x) && currentX > 0) {
+                    if (char === '\n') {
+                        if (rowHeight === 0) rowHeight = charH;
+
+                        // Push an invisible space to represent the newline
+                        rowBuffer.push({
+                            char: ' ',
+                            cx: currentX,
+                            cy: currentY,
+                            width: charW,
+                            height: charH,
+                            style
+                        });
+
+                        flushRow();
+                        continue;
+                    }
+
+                    if (currentX + charW > areaWidth && currentX > 0) {
                         flushRow();
                     }
 

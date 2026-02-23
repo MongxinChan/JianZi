@@ -119,11 +119,12 @@ export class Editor {
 
   /**
    * 导出当前画布内容为图片
+   * @param scale 导出放大倍数，默认 3x (相当于 ~300 DPI) 以保证 PDF 和图片的绝对清晰度
    */
-  public exportImage(): string {
+  public exportImage(scale: number = 3): string {
+    const mode = this.options.mode || 'vertical';
     // @ts-ignore
-    const canvas = this.layerManager.canvasLayer.getCanvas();
-    return canvas.toDataURL('image/png', 1.0);
+    return this.layerManager.canvasLayer.exportHighRes(this.deltas, mode, scale);
   }
 
   /**
@@ -248,7 +249,8 @@ export class Editor {
     const oldWidth = this.options.width;
     const oldHeight = this.options.height;
 
-    this.options = { ...this.options, ...newOptions };
+    // Mutate the original object so LayerManager and CanvasLayer keep the same reference
+    Object.assign(this.options, newOptions);
 
     if (this.options.width !== oldWidth || this.options.height !== oldHeight) {
       this.layerManager.resize(this.options.width, this.options.height);
