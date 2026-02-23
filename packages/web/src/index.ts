@@ -227,9 +227,21 @@ function showImagePanel(delta: ImageDelta) {
   document.getElementById('coord-bl')!.textContent = `[${Math.round(delta.x)}, ${Math.round(delta.y + delta.height)}]`;
   document.getElementById('coord-br')!.textContent = `[${Math.round(delta.x + delta.width)}, ${Math.round(delta.y + delta.height)}]`;
 
-  // Sync draw mode
-  const radios = document.querySelectorAll<HTMLInputElement>('input[name="img-draw-mode"]');
-  radios.forEach(r => { r.checked = r.value === delta.drawMode; });
+  // Sync draw mode radios
+  document.querySelectorAll<HTMLInputElement>('input[name="img-draw-mode"]').forEach(r => {
+    r.checked = r.value === delta.drawMode;
+  });
+
+  // Sync border inputs
+  const borderColorInput = document.getElementById('img-border-color') as HTMLInputElement;
+  const borderWidthInput = document.getElementById('img-border-width') as HTMLInputElement;
+  if (borderColorInput) {
+    borderColorInput.value = (delta.borderColor && delta.borderColor !== 'transparent')
+      ? delta.borderColor : '#000000';
+  }
+  if (borderWidthInput) {
+    borderWidthInput.value = String(delta.borderWidth ?? 0);
+  }
 }
 
 function showCanvasPanel() {
@@ -242,11 +254,32 @@ document.querySelectorAll('input[name="img-draw-mode"]').forEach(el => {
   el.addEventListener('change', (e) => {
     const mode = (e.target as HTMLInputElement).value as 'fill' | 'cover' | 'contain';
     const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
-    if (delta instanceof ImageDelta) {
-      delta.drawMode = mode;
+    // Use type check to avoid instanceof module mismatch issues
+    if (delta && delta.type === 'image') {
+      (delta as ImageDelta).drawMode = mode;
       jianzi.refresh();
     }
   });
+});
+
+// Border color change
+document.getElementById('img-border-color')?.addEventListener('input', (e) => {
+  const color = (e.target as HTMLInputElement).value;
+  const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+  if (delta && delta.type === 'image') {
+    (delta as ImageDelta).borderColor = color;
+    jianzi.refresh();
+  }
+});
+
+// Border width change
+document.getElementById('img-border-width')?.addEventListener('input', (e) => {
+  const width = parseFloat((e.target as HTMLInputElement).value) || 0;
+  const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+  if (delta && delta.type === 'image') {
+    (delta as ImageDelta).borderWidth = width;
+    jianzi.refresh();
+  }
 });
 
 // Upload image from panel
@@ -258,8 +291,8 @@ document.getElementById('upload-image-link')?.addEventListener('click', () => {
 document.addEventListener('mouseup', () => {
   requestAnimationFrame(() => {
     const sel = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
-    if (sel instanceof ImageDelta) {
-      showImagePanel(sel);
+    if (sel && sel.type === 'image') {
+      showImagePanel(sel as ImageDelta);
     } else {
       showCanvasPanel();
     }
