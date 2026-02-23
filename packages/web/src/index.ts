@@ -1,211 +1,384 @@
-import { Editor } from '@jianzi/core';
+import { Editor, ImageDelta } from '@jianzi/core';
 import './style.css';
-// HMR Trigger
 
-// 1. 初始化编辑器核心
+// ============================================================
+// 1. Editor Initialization
+// ============================================================
 const container = document.querySelector('#app');
-if (!container) throw new Error("找不到 #app 容器");
+if (!container) throw new Error('找不到 #app 容器');
 
 const jianzi = new Editor({
   container: container as HTMLElement,
   eventTarget: document.querySelector('.viewport') as HTMLElement,
-  width: 500, // 稍微缩小尺寸，让呼吸感更强
+  width: 500,
   height: 700,
   padding: 60,
   grid: { type: 'line', color: '#cc0000', opacity: 0.2 },
-  // 建议加上字体设置，否则默认黑体不好看
-  defaultFont: "28px 'STKaiti', 'KaiTi', serif"
+  defaultFont: "'STKaiti', 'KaiTi', serif"
 });
 
-// 2. 模拟初始文字
-jianzi.setValue("以此为凭，书写寂静。我在这寂静中，发现了自己的力量。");
+// Seed initial content
+jianzi.setValue('以此为凭，书写寂静。');
 
-// [添加文本框]
-document.querySelector('#add-text')?.addEventListener('click', () => {
+// ============================================================
+// 2. Tool Buttons
+// ============================================================
+const toolSelectBtn = document.getElementById('tool-select');
+const toolHandBtn = document.getElementById('tool-hand');
+
+function setActiveTool(mode: 'select' | 'hand') {
+  jianzi.setTool(mode);
+  toolSelectBtn?.classList.toggle('active', mode === 'select');
+  toolHandBtn?.classList.toggle('active', mode === 'hand');
+}
+
+toolSelectBtn?.addEventListener('click', () => setActiveTool('select'));
+toolHandBtn?.addEventListener('click', () => setActiveTool('hand'));
+
+// ============================================================
+// 3. Add Text / Add Image
+// ============================================================
+document.getElementById('add-text')?.addEventListener('click', () => {
   jianzi.addText();
 });
 
+const imageFileInput = document.getElementById('image-file-input') as HTMLInputElement;
+document.getElementById('add-image')?.addEventListener('click', () => imageFileInput?.click());
 
-// [导出功能]
-document.querySelector('#export')?.addEventListener('click', () => {
-  console.log("点击了导出..."); // 方便调试
+imageFileInput?.addEventListener('change', (e) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { jianzi.addImage(reader.result as string); };
+  reader.readAsDataURL(file);
+  (e.target as HTMLInputElement).value = '';
+});
+
+// ============================================================
+// 4. Undo / Redo
+// ============================================================
+document.getElementById('undo')?.addEventListener('click', () => jianzi.undo());
+document.getElementById('redo')?.addEventListener('click', () => jianzi.redo());
+
+// ============================================================
+// 5. Dropdown menus (open / close)
+// ============================================================
+function setupDropdown(triggerID: string, menuID: string) {
+  const trigger = document.getElementById(triggerID);
+  const menu = document.getElementById(menuID);
+  if (!trigger || !menu) return;
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const opening = !menu.classList.contains('open');
+    // Close all dropdowns first
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    if (opening) menu.classList.add('open');
+  });
+}
+
+setupDropdown('action-menu-trigger', 'action-menu');
+setupDropdown('export-menu-trigger', 'export-menu');
+
+// Close dropdowns on outside click
+document.addEventListener('click', () => {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+// ============================================================
+// 6. Open File (JSON)
+// ============================================================
+const jsonFileInput = document.getElementById('json-file-input') as HTMLInputElement;
+
+document.getElementById('open-file')?.addEventListener('click', () => {
+  jsonFileInput?.click();
+});
+
+jsonFileInput?.addEventListener('change', (e) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const json = reader.result as string;
+    jianzi.loadJSON(json);
+    // Sync canvas size inputs
+    const opts = jianzi.getOptions();
+    const wi = document.getElementById('canvas-width') as HTMLInputElement;
+    const hi = document.getElementById('canvas-height') as HTMLInputElement;
+    if (wi) wi.value = String(opts.width);
+    if (hi) hi.value = String(opts.height);
+  };
+  reader.readAsText(file);
+  (e.target as HTMLInputElement).value = '';
+});
+
+// ============================================================
+// 7. Clear Canvas
+// ============================================================
+document.getElementById('clear-canvas')?.addEventListener('click', () => {
+  if (confirm('确定要清空画布吗？')) jianzi.clear();
+});
+
+// ============================================================
+// 8. Export — PNG
+// ============================================================
+document.getElementById('export-png')?.addEventListener('click', () => {
   try {
     const dataUrl = jianzi.exportImage();
-
-    // 创建一个临时的下载链接
     const link = document.createElement('a');
     link.download = `jianzi-${Date.now()}.png`;
     link.href = dataUrl;
-
-    // 必须加入文档流才能点击生效
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   } catch (e) {
-    console.error("导出失败，请检查 Renderer 是否实现了 getCanvas", e);
-    alert("导出失败，请按 F12 查看控制台报错");
+    alert('导出失败，请检查控制台');
+    console.error(e);
   }
 });
 
-// [清除功能]
-document.querySelector('#clear')?.addEventListener('click', () => {
-  // 加上确认弹窗，防止误触
-  if (confirm('确定要清空画纸吗？')) {
-    jianzi.clear();
+// ============================================================
+// 9. Export — PDF
+// ============================================================
+document.getElementById('export-pdf')?.addEventListener('click', () => {
+  try {
+    const jspdfAny = (window as any).jspdf;
+    if (!jspdfAny) { alert('jsPDF 未加载，请检查网络连接'); return; }
+    const { jsPDF } = jspdfAny;
+    const opts = jianzi.getOptions();
+    const doc = new jsPDF({ unit: 'px', format: [opts.width, opts.height], orientation: 'portrait' });
+    const imgData = jianzi.exportImage();
+    doc.addImage(imgData, 'PNG', 0, 0, opts.width, opts.height, undefined, 'FAST');
+    doc.save(`jianzi-${Date.now()}.pdf`);
+  } catch (e) {
+    alert('PDF 导出失败，请检查控制台');
+    console.error(e);
   }
 });
 
-// [撤销/重做功能]
-document.querySelector('#undo')?.addEventListener('click', () => {
-  jianzi.undo();
+// ============================================================
+// 10. Export — JSON
+// ============================================================
+document.getElementById('export-json')?.addEventListener('click', () => {
+  const json = jianzi.exportJSON();
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.download = `jianzi-${Date.now()}.json`;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 });
 
-document.querySelector('#redo')?.addEventListener('click', () => {
-  jianzi.redo();
-});
+// ============================================================
+// 11. Canvas Size Controls
+// ============================================================
+const widthInput = document.getElementById('canvas-width') as HTMLInputElement;
+const heightInput = document.getElementById('canvas-height') as HTMLInputElement;
 
-// [布局联动：排版模式]
-const radioInputs = document.querySelectorAll('input[name="layout-mode"]');
-radioInputs.forEach(input => {
-  input.addEventListener('change', (e) => {
-    const target = e.target as HTMLInputElement;
-    if (target.checked) {
-      const mode = target.value as 'vertical' | 'horizontal';
-      jianzi.updateOptions({ mode });
-    }
-  });
-});
-
-// [画布尺寸：自定义输入]
-const widthInput = document.querySelector('#canvas-width') as HTMLInputElement;
-const heightInput = document.querySelector('#canvas-height') as HTMLInputElement;
-
-const updateCanvasSize = () => {
-  const width = parseInt(widthInput.value) || 500;
-  const height = parseInt(heightInput.value) || 700;
-  jianzi.updateOptions({ width, height });
-};
+function updateCanvasSize() {
+  const w = parseInt(widthInput.value) || 500;
+  const h = parseInt(heightInput.value) || 700;
+  jianzi.updateOptions({ width: w, height: h });
+}
 
 widthInput?.addEventListener('change', updateCanvasSize);
 heightInput?.addEventListener('change', updateCanvasSize);
 
-// [画布尺寸：预设按钮]
-document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    const w = target.getAttribute('data-w');
-    const h = target.getAttribute('data-h');
-
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const target = (e.target as HTMLElement).closest('.preset-btn') as HTMLElement;
+    const w = target?.getAttribute('data-w');
+    const h = target?.getAttribute('data-h');
     if (w && h) {
-      widthInput.value = w;
-      heightInput.value = h;
-      updateCanvasSize();
+      if (widthInput) widthInput.value = w;
+      if (heightInput) heightInput.value = h;
+      jianzi.updateOptions({ width: parseInt(w), height: parseInt(h) });
     }
   });
 });
 
-// [图片上传功能]
-const addImageBtn = document.querySelector('#add-image');
-const imageFileInput = document.querySelector('#image-file-input') as HTMLInputElement;
+// Layout mode radios
+document.querySelectorAll('input[name="layout-mode"]').forEach(el => {
+  el.addEventListener('change', (e) => {
+    const mode = (e.target as HTMLInputElement).value as 'vertical' | 'horizontal';
+    jianzi.updateOptions({ mode });
+  });
+});
 
-addImageBtn?.addEventListener('click', () => {
+const fontSelect = document.getElementById('font-family') as HTMLSelectElement;
+fontSelect?.addEventListener('change', () => jianzi.setFont(fontSelect.value));
+
+// ============================================================
+// 12. Image Properties Panel
+// ============================================================
+const panelCanvas = document.getElementById('panel-canvas');
+const panelImage = document.getElementById('panel-image');
+
+function showImagePanel(delta: ImageDelta) {
+  if (panelCanvas) panelCanvas.style.display = 'none';
+  if (panelImage) panelImage.style.display = 'block';
+
+  // Update coordinates
+  document.getElementById('coord-tl')!.textContent = `[${Math.round(delta.x)}, ${Math.round(delta.y)}]`;
+  document.getElementById('coord-tr')!.textContent = `[${Math.round(delta.x + delta.width)}, ${Math.round(delta.y)}]`;
+  document.getElementById('coord-bl')!.textContent = `[${Math.round(delta.x)}, ${Math.round(delta.y + delta.height)}]`;
+  document.getElementById('coord-br')!.textContent = `[${Math.round(delta.x + delta.width)}, ${Math.round(delta.y + delta.height)}]`;
+
+  // Sync draw mode
+  const radios = document.querySelectorAll<HTMLInputElement>('input[name="img-draw-mode"]');
+  radios.forEach(r => { r.checked = r.value === delta.drawMode; });
+}
+
+function showCanvasPanel() {
+  if (panelCanvas) panelCanvas.style.display = 'block';
+  if (panelImage) panelImage.style.display = 'none';
+}
+
+// Draw mode radio change
+document.querySelectorAll('input[name="img-draw-mode"]').forEach(el => {
+  el.addEventListener('change', (e) => {
+    const mode = (e.target as HTMLInputElement).value as 'fill' | 'cover' | 'contain';
+    const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+    if (delta instanceof ImageDelta) {
+      delta.drawMode = mode;
+      jianzi.refresh();
+    }
+  });
+});
+
+// Upload image from panel
+document.getElementById('upload-image-link')?.addEventListener('click', () => {
   imageFileInput?.click();
 });
 
-imageFileInput?.addEventListener('change', (e) => {
-  const target = e.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const dataUrl = reader.result as string;
-    jianzi.addImage(dataUrl);
-  };
-  reader.readAsDataURL(file);
-
-  // Reset input so the same file can be re-selected
-  target.value = '';
+// Update panel whenever mouse is released (selection may have changed)
+document.addEventListener('mouseup', () => {
+  requestAnimationFrame(() => {
+    const sel = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+    if (sel instanceof ImageDelta) {
+      showImagePanel(sel);
+    } else {
+      showCanvasPanel();
+    }
+    // Update toolbar too
+    updateFloatingToolbar();
+  });
 });
 
-// [字体选择]
-const fontSelect = document.querySelector('#font-family') as HTMLSelectElement;
-fontSelect?.addEventListener('change', () => {
-  jianzi.setFont(fontSelect.value);
-});
-
-// [Floating Toolbar Logic]
+// ============================================================
+// 13. Floating Text Toolbar
+// ============================================================
 const floatingToolbar = document.getElementById('floating-toolbar');
-const bindToolbar = () => {
-  if (!floatingToolbar) return;
 
-  // Bind Buttons
-  floatingToolbar.querySelector('#ft-bold')?.addEventListener('click', () => {
+function closeAllPalettes() {
+  document.getElementById('ft-color-palette')?.classList.remove('open');
+  document.getElementById('ft-bg-palette')?.classList.remove('open');
+  document.getElementById('ft-font-size-dropdown')?.classList.remove('open');
+}
+
+function updateFloatingToolbar() {
+  if (!floatingToolbar) return;
+  const range = jianzi.selectionRange;
+  const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+
+  if (range && delta && delta.type === 'text' && Math.abs(range.start - range.end) > 0) {
+    // Update font size
+    const ftSizeInput = document.getElementById('ft-font-size-input') as HTMLInputElement;
     const currentStyle = jianzi.getSelectionStyle();
-    const isBold = currentStyle?.fontWeight === 'bold';
-    jianzi.applyStyleToSelection({ fontWeight: isBold ? 'normal' : 'bold' });
+    if (ftSizeInput && document.activeElement !== ftSizeInput) {
+      ftSizeInput.value = currentStyle?.fontSize ? `${currentStyle.fontSize}px` : '';
+    }
+
+    // Position toolbar
+    if ('getRectsForRange' in delta) {
+      const textDelta = delta as any;
+      const canvas = document.querySelector('canvas');
+      const ctx = canvas?.getContext('2d');
+      const mode = jianzi.getOptions().mode || 'vertical';
+      if (ctx) {
+        const rects = textDelta.getRectsForRange(
+          ctx,
+          Math.min(range.start, range.end),
+          Math.max(range.start, range.end),
+          mode, jianzi.getOptions().width, jianzi.getOptions().height
+        );
+        if (rects && rects.length > 0) {
+          const rect = rects[0];
+          const canvasRect = canvas?.getBoundingClientRect();
+          if (canvasRect) {
+            floatingToolbar.style.left = `${canvasRect.left + textDelta.x + rect.x}px`;
+            floatingToolbar.style.top = `${canvasRect.top + textDelta.y + rect.y - 50}px`;
+            floatingToolbar.classList.add('visible');
+            return;
+          }
+        }
+      }
+    }
+  }
+  floatingToolbar.classList.remove('visible');
+}
+
+document.addEventListener('keyup', () => requestAnimationFrame(updateFloatingToolbar));
+
+if (floatingToolbar) {
+  // Bold / Italic / Underline
+  floatingToolbar.querySelector('#ft-bold')?.addEventListener('click', () => {
+    const s = jianzi.getSelectionStyle();
+    jianzi.applyStyleToSelection({ fontWeight: s?.fontWeight === 'bold' ? 'normal' : 'bold' });
   });
   floatingToolbar.querySelector('#ft-italic')?.addEventListener('click', () => {
-    const currentStyle = jianzi.getSelectionStyle();
-    const isItalic = currentStyle?.fontStyle === 'italic';
-    jianzi.applyStyleToSelection({ fontStyle: isItalic ? 'normal' : 'italic' });
+    const s = jianzi.getSelectionStyle();
+    jianzi.applyStyleToSelection({ fontStyle: s?.fontStyle === 'italic' ? 'normal' : 'italic' });
   });
   floatingToolbar.querySelector('#ft-underline')?.addEventListener('click', () => {
-    const currentStyle = jianzi.getSelectionStyle();
-    const isUnderline = !!currentStyle?.underline;
-    jianzi.applyStyleToSelection({ underline: !isUnderline });
+    const s = jianzi.getSelectionStyle();
+    jianzi.applyStyleToSelection({ underline: !s?.underline });
   });
-  // Font size input (Combobox)
-  const ftFontSizeInput = floatingToolbar.querySelector('#ft-font-size-input') as HTMLInputElement;
-  ftFontSizeInput?.addEventListener('change', () => {
-    let val = ftFontSizeInput.value.toLowerCase().replace('px', '').trim();
-    const size = parseInt(val, 10);
+  floatingToolbar.querySelector('#ft-clear')?.addEventListener('click', () => {
+    jianzi.applyStyleToSelection({ fontWeight: 'normal', fontStyle: 'normal', underline: false, color: '#2c3e50', background: undefined });
+  });
+
+  // Font size combobox
+  const ftSizeInput = floatingToolbar.querySelector('#ft-font-size-input') as HTMLInputElement;
+  const ftSizeDropdown = document.getElementById('ft-font-size-dropdown');
+  const ftSizeTrigger = document.getElementById('ft-font-size-trigger');
+
+  ftSizeInput?.addEventListener('change', () => {
+    const size = parseInt(ftSizeInput.value);
     if (!isNaN(size) && size > 0) {
-      ftFontSizeInput.value = size + 'px';
+      ftSizeInput.value = size + 'px';
       jianzi.applyStyleToSelection({ fontSize: size });
     }
-    // Return focus to canvas? Optional.
   });
 
-  // Custom Font Size Dropdown Logic
-  const ftFontSizeDropdown = document.getElementById('ft-font-size-dropdown');
-  const ftFontSizeTrigger = document.getElementById('ft-font-size-trigger');
-
-  // Toggle dropdown
-  ftFontSizeTrigger?.addEventListener('click', (e) => {
+  ftSizeTrigger?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isOpen = ftFontSizeDropdown?.classList.contains('open');
+    const isOpen = ftSizeDropdown?.classList.contains('open');
     closeAllPalettes();
-    if (!isOpen) ftFontSizeDropdown?.classList.add('open');
+    if (!isOpen) ftSizeDropdown?.classList.add('open');
   });
 
-  // Select option
-  ftFontSizeDropdown?.querySelectorAll('.ft-option').forEach(option => {
-    option.addEventListener('click', (e) => {
+  ftSizeDropdown?.querySelectorAll('.ft-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
       e.stopPropagation();
-      const val = (option as HTMLElement).dataset.value;
+      const val = (opt as HTMLElement).dataset.value;
       if (val) {
-        ftFontSizeInput.value = val + 'px';
-        const size = parseInt(val, 10);
-        jianzi.applyStyleToSelection({ fontSize: size });
+        ftSizeInput.value = val + 'px';
+        jianzi.applyStyleToSelection({ fontSize: parseInt(val) });
       }
-      ftFontSizeDropdown?.classList.remove('open');
+      ftSizeDropdown.classList.remove('open');
     });
   });
 
-  // Color Palette logic
+  // Color palettes
   const ftColorPalette = document.getElementById('ft-color-palette');
   const ftBgPalette = document.getElementById('ft-bg-palette');
   const ftColorBar = document.getElementById('ft-color-bar');
   const ftBgBar = document.getElementById('ft-bg-bar');
 
-  const closeAllPalettes = () => {
-    ftColorPalette?.classList.remove('open');
-    ftBgPalette?.classList.remove('open');
-    ftFontSizeDropdown?.classList.remove('open');
-  };
-
-  // Toggle font color palette
   floatingToolbar.querySelector('#ft-color-trigger')?.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = ftColorPalette?.classList.contains('open');
@@ -213,7 +386,6 @@ const bindToolbar = () => {
     if (!isOpen) ftColorPalette?.classList.add('open');
   });
 
-  // Toggle highlight palette
   floatingToolbar.querySelector('#ft-bg-trigger')?.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = ftBgPalette?.classList.contains('open');
@@ -221,184 +393,34 @@ const bindToolbar = () => {
     if (!isOpen) ftBgPalette?.classList.add('open');
   });
 
-  // Font color swatches
   ftColorPalette?.querySelectorAll('.ft-swatch').forEach(swatch => {
     swatch.addEventListener('click', (e) => {
       e.stopPropagation();
       const color = (swatch as HTMLElement).dataset.color || '#2c3e50';
-
       jianzi.applyStyleToSelection({ color });
       if (ftColorBar) ftColorBar.style.background = color;
       closeAllPalettes();
     });
   });
 
-  // Highlight color swatches
   ftBgPalette?.querySelectorAll('.ft-swatch').forEach(swatch => {
     swatch.addEventListener('click', (e) => {
       e.stopPropagation();
       const color = (swatch as HTMLElement).dataset.color;
-      if (color) {
-        jianzi.applyStyleToSelection({ background: color });
-        if (ftBgBar) ftBgBar.style.background = color;
-      } else {
-        // Clear highlight
-        jianzi.applyStyleToSelection({ background: undefined });
-        if (ftBgBar) ftBgBar.style.background = 'transparent';
-      }
+      jianzi.applyStyleToSelection({ background: color || undefined });
+      if (ftBgBar) ftBgBar.style.background = color || 'transparent';
       closeAllPalettes();
     });
   });
 
-  // Close palettes when clicking outside
-  document.addEventListener('click', () => closeAllPalettes());
+  document.addEventListener('click', closeAllPalettes);
 
-  floatingToolbar.querySelector('#ft-clear')?.addEventListener('click', () => {
-    jianzi.applyStyleToSelection({
-      fontWeight: 'normal',
-      fontStyle: 'normal',
-      underline: false,
-      color: '#2c3e50',
-      background: undefined
-    });
-    if (ftColorBar) ftColorBar.style.background = '#2c3e50';
-    if (ftBgBar) ftBgBar.style.background = 'transparent';
-    closeAllPalettes();
-  });
-
-  // Handle Selection Change
-  const updateToolbar = () => {
-    const range = jianzi.selectionRange;
-    const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
-
-
-    if (range && delta && delta.type === 'text' && Math.abs(range.start - range.end) > 0) {
-
-      // Update font size input to match selection
-      const currentStyle = jianzi.getSelectionStyle();
-      if (ftFontSizeInput) {
-        if (document.activeElement !== ftFontSizeInput) {
-          const size = currentStyle?.fontSize;
-          ftFontSizeInput.value = size ? (size + 'px') : '';
-        }
-      }
-
-      // Update font family select
-      if (fontSelect && currentStyle?.fontFamily) {
-        fontSelect.value = currentStyle.fontFamily;
-      }
-
-      // Show Toolbar
-      // Using 'any' to bypass TS check for TextDelta specific method if not imported
-      if ('getRectsForRange' in delta) {
-        const textDelta = delta as any;
-        const canvas = document.querySelector('canvas');
-        const ctx = canvas?.getContext('2d');
-        const mode = jianzi.getOptions().mode || 'vertical';
-
-        if (ctx) {
-          const rects = textDelta.getRectsForRange(
-            ctx,
-            Math.min(range.start, range.end),
-            Math.max(range.start, range.end),
-            mode,
-            jianzi.getOptions().width,
-            jianzi.getOptions().height
-          );
-
-
-          if (rects && rects.length > 0) {
-            const rect = rects[0];
-            // Calculate position
-            const canvasRect = canvas?.getBoundingClientRect();
-
-
-            if (canvasRect) {
-              // Delta (x,y) + Rect (x,y) + Canvas (left, top)
-              const absX = canvasRect.left + textDelta.x + rect.x;
-              const absY = canvasRect.top + textDelta.y + rect.y;
-
-
-              floatingToolbar.style.left = `${absX}px`;
-              floatingToolbar.style.top = `${absY - 50}px`; // 50px above
-              floatingToolbar.classList.add('visible');
-              return;
-            }
-          }
-        }
-      }
-    }
-
-    // Hide if no selection
-    floatingToolbar.classList.remove('visible');
-  };
-
-
-  document.addEventListener('mouseup', () => requestAnimationFrame(updateToolbar));
-  document.addEventListener('keyup', () => requestAnimationFrame(updateToolbar));
-
-  // Prevent focus loss when clicking toolbar (except for select inputs)
+  // Prevent losing textarea focus when clicking toolbar
   floatingToolbar.addEventListener('mousedown', (e) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'SELECT' || target.tagName === 'OPTION' || target.tagName === 'INPUT') {
+    const t = e.target as HTMLElement;
+    if (t.tagName !== 'SELECT' && t.tagName !== 'OPTION' && t.tagName !== 'INPUT') {
+      e.preventDefault();
       e.stopPropagation();
-      return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-  });
-};
-bindToolbar();
-
-// [右侧边栏交互]
-const rightPanel = document.getElementById('right-panel');
-const toggleBtn = document.getElementById('toggle-right-panel');
-
-toggleBtn?.addEventListener('click', () => {
-  if (rightPanel) {
-    const isOpen = rightPanel.classList.toggle('open');
-    toggleBtn.textContent = isOpen ? '>' : '<';
-  }
-});
-
-// [预设尺寸点击]
-document.querySelectorAll('.preset-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    // Traverse up in case click on span
-    const target = (e.target as HTMLElement).closest('.preset-btn');
-    if (!target) return;
-
-    const w = target.getAttribute('data-w');
-    const h = target.getAttribute('data-h');
-
-    if (w && h && widthInput && heightInput) {
-      widthInput.value = w;
-      heightInput.value = h;
-      // Trigger change event manually or call update function
-      // Assuming updateCanvasSize is accessible or bind change event
-      // updateCanvasSize is defined in scope but const.
-      // We can dispatch event on inputs?
-      // Or call updateCanvasSize directly if it's in scope.
-      // updateCanvasSize IS in scope.
-
-      // Manually trigger the update
-      jianzi.updateOptions({ width: parseInt(w), height: parseInt(h) });
     }
   });
-});
-
-// [工具栏切换]
-const toolSelectBtn = document.getElementById('tool-select');
-const toolHandBtn = document.getElementById('tool-hand');
-
-toolSelectBtn?.addEventListener('click', () => {
-  jianzi.setTool('select');
-  toolSelectBtn.classList.add('active');
-  toolHandBtn?.classList.remove('active');
-});
-
-toolHandBtn?.addEventListener('click', () => {
-  jianzi.setTool('hand');
-  toolHandBtn.classList.add('active');
-  toolSelectBtn?.classList.remove('active');
-});
+}
