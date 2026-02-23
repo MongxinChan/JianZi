@@ -21,6 +21,21 @@ const jianzi = new Editor({
 jianzi.setValue('以此为凭，书写寂静。');
 
 // ============================================================
+// 1b. Right Panel Toggle
+// ============================================================
+const rightPanel = document.getElementById('right-panel');
+const togglePanelBtn = document.getElementById('toggle-right-panel');
+
+togglePanelBtn?.addEventListener('click', () => {
+  if (rightPanel) {
+    const isOpen = rightPanel.classList.toggle('open');
+    if (togglePanelBtn) {
+      togglePanelBtn.textContent = isOpen ? '>' : '<';
+    }
+  }
+});
+
+// ============================================================
 // 2. Tool Buttons
 // ============================================================
 const toolSelectBtn = document.getElementById('tool-select');
