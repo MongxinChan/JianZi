@@ -605,19 +605,23 @@ export class TextDelta extends Delta {
     }
 }
 
+export type ImageDrawMode = 'fill' | 'cover' | 'contain';
+
 export class ImageDelta extends Delta {
     public src: string;
     public aspectRatio: number = 1;
+    public drawMode: ImageDrawMode = 'cover';
     private _img: HTMLImageElement | null = null;
     private _loaded: boolean = false;
     private _onLoadCallback: (() => void) | null = null;
 
     constructor(
-        attr: Omit<DeltaLike, 'type'> & { src: string },
+        attr: Omit<DeltaLike, 'type'> & { src: string; drawMode?: ImageDrawMode },
         onLoad?: () => void,
     ) {
         super({ ...attr, type: DeltaType.Image });
         this.src = attr.src;
+        this.drawMode = attr.drawMode ?? 'cover';
         this._onLoadCallback = onLoad || null;
         this._loadImage();
     }
@@ -653,22 +657,52 @@ export class ImageDelta extends Delta {
     }
 
     draw(ctx: CanvasRenderingContext2D) {
+        const { x, y, width: w, height: h } = this;
+
         if (!this._loaded || !this._img) {
             // Draw placeholder
             ctx.save();
             ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(this.x, this.y, this.width || 100, this.height || 100);
+            ctx.fillRect(x, y, w || 100, h || 100);
             ctx.fillStyle = '#999';
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('Loading...', this.x + (this.width || 100) / 2, this.y + (this.height || 100) / 2);
+            ctx.fillText('Loading...', x + (w || 100) / 2, y + (h || 100) / 2);
             ctx.restore();
             return;
         }
 
+        const img = this._img;
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+
         ctx.save();
-        ctx.drawImage(this._img, this.x, this.y, this.width, this.height);
+
+        if (this.drawMode === 'fill') {
+            // Stretch to fill, ignore aspect ratio
+            ctx.drawImage(img, x, y, w, h);
+        } else if (this.drawMode === 'cover') {
+            // Crop: scale so image covers entire box
+            const scale = Math.max(w / iw, h / ih);
+            const sw = w / scale;
+            const sh = h / scale;
+            const sx = (iw - sw) / 2;
+            const sy = (ih - sh) / 2;
+            ctx.beginPath();
+            ctx.rect(x, y, w, h);
+            ctx.clip();
+            ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+        } else {
+            // contain: letterbox, preserve aspect ratio
+            const scale = Math.min(w / iw, h / ih);
+            const dw = iw * scale;
+            const dh = ih * scale;
+            const dx = x + (w - dw) / 2;
+            const dy = y + (h - dh) / 2;
+            ctx.drawImage(img, dx, dy, dw, dh);
+        }
+
         ctx.restore();
     }
 
