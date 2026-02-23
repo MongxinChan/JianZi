@@ -8,64 +8,131 @@
 
 <body>
     <div class="editor-layout">
-        <!-- 1. Header: Global Actions -->
+        <!-- Header with integrated toolbar -->
         <header class="editor-header">
+            <!-- Left: brand + tool icons + undo/redo -->
             <div class="header-left">
                 <div class="brand">JianZi</div>
-                <div class="menu-bar">
-                    <button class="menu-item">文件 File</button>
-                    <button class="menu-item">编辑 Edit</button>
-                    <button class="menu-item">视图 View</button>
+                <div class="toolbar-divider"></div>
+
+                <!-- Tool Buttons -->
+                <div class="toolbar-group">
+                    <div class="tool-btn active" id="tool-select" title="选择 (V)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4V2z" />
+                        </svg>
+                    </div>
+                    <div class="tool-btn" id="tool-hand" title="抓手 (H)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2v1h-1V3a2 2 0 00-2-2 2 2 0 00-2 2v4h-1V5a2 2 0 00-2-2 2 2 0 00-2 2v4h-1V8a2 2 0 00-2-2 2 2 0 00-2 2v9l-3.5-1.8a2.1 2.1 0 00-2 .6l-.5.6 7 6.4c.5.4 1.2.8 2 .8h8c1.7 0 3-1.3 3-3V13a2 2 0 00-2-2h-1z" />
+                        </svg>
+                    </div>
+                    <div class="tool-btn" id="add-text" title="文字 (T)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M5 4v3h5.5v12h3V7H19V4z" />
+                        </svg>
+                    </div>
+                    <div class="tool-btn" id="add-image" title="图片 (I)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="toolbar-divider"></div>
+
+                <!-- Undo / Redo -->
+                <div class="toolbar-group">
+                    <div class="tool-btn" id="undo" title="撤销 (Ctrl+Z)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" />
+                        </svg>
+                    </div>
+                    <div class="tool-btn" id="redo" title="重做 (Ctrl+Y)">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path
+                                d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16a8.002 8.002 0 017.6-5.5c1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z" />
+                        </svg>
+                    </div>
                 </div>
             </div>
+
+            <!-- Right: Action and Export dropdowns -->
             <div class="header-right">
-                <button id="export" class="action-btn primary">导出 Export</button>
-                <a href="https://github.com/MongxinChan/JianZi" target="_blank" class="github-link">GitHub</a>
+                <!-- 操作 Dropdown -->
+                <div class="dropdown" id="action-dropdown">
+                    <button class="dropdown-trigger action-btn" id="action-menu-trigger">
+                        操作 <svg viewBox="0 0 10 6" width="10" height="6" fill="none">
+                            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="dropdown-menu" id="action-menu">
+                        <div class="dropdown-item" id="open-file">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z" />
+                            </svg>
+                            打开文件
+                        </div>
+                        <div class="dropdown-item" id="clear-canvas">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                            </svg>
+                            清空画布
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 导出 Dropdown -->
+                <div class="dropdown" id="export-dropdown">
+                    <button class="dropdown-trigger action-btn primary" id="export-menu-trigger">
+                        导出 <svg viewBox="0 0 10 6" width="10" height="6" fill="none">
+                            <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right" id="export-menu">
+                        <div class="dropdown-item" id="export-png">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M21 19V5c0-1.1-.9-2-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                            </svg>
+                            导出图片 (PNG)
+                        </div>
+                        <div class="dropdown-item" id="export-pdf">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z" />
+                            </svg>
+                            导出高清 PDF
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <div class="dropdown-item" id="export-json">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path
+                                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 7V3.5L18.5 9H13z" />
+                            </svg>
+                            导出 JSON
+                        </div>
+                    </div>
+                </div>
+
+                <a href="https://github.com/MongxinChan/JianZi" target="_blank" class="github-link">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path
+                            d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                </a>
             </div>
         </header>
 
-        <!-- 2. Main Body -->
+        <!-- Main Body -->
         <div class="editor-body">
-            <!-- Left Toolbar -->
-            <aside class="left-toolbar">
-                <!-- Tools -->
-                <div class="tool-btn active" id="tool-select" title="选择模式 (Select)">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M7 2l12 11.2-5.8.5 3.3 7.3-2.2.9-3.2-7.4-4.4 4V2z" />
-                    </svg>
-                </div>
-                <div class="tool-btn" id="tool-hand" title="抓手模式 (Hand)">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path
-                            d="M18 11V6a2 2 0 00-2-2 2 2 0 00-2 2v1h-1V3a2 2 0 00-2-2 2 2 0 00-2 2v4h-1V5a2 2 0 00-2-2 2 2 0 00-2 2v4h-1V8a2 2 0 00-2-2 2 2 0 00-2 2v9l-3.5-1.8a2.1 2.1 0 00-2 .6l-.5.6 7 6.4c.5.4 1.2.8 2 .8h8c1.7 0 3-1.3 3-3V13a2 2 0 00-2-2h-1z" />
-                    </svg>
-                </div>
-
-                <div class="tool-item-divider"></div>
-
-                <div class="tool-btn" id="undo" title="撤销 (Ctrl+Z)">
-                    <span class="icon">↺</span>
-                </div>
-                <div class="tool-btn" id="redo" title="重做 (Ctrl+Y)">
-                    <span class="icon">↻</span>
-                </div>
-
-                <div class="tool-item-divider"></div>
-
-                <div class="tool-btn" id="add-text" title="插入文字">
-                    <span class="icon">T</span>
-                </div>
-                <div class="tool-btn" id="add-image" title="Image">
-                    <span class="icon">Img</span>
-                </div>
-                <div class="tool-item-divider"></div>
-                <div class="tool-btn" id="clear" title="Clear">
-                    <span class="icon">×</span>
-                </div>
-                <!-- Hidden file input for image upload -->
-                <input type="file" id="image-file-input" accept="image/*" style="display:none;">
-            </aside>
-
             <!-- Center Viewport -->
             <main class="viewport">
                 <div class="canvas-container">
@@ -75,91 +142,49 @@
 
             <!-- Right Property Panel -->
             <aside class="right-properties" id="right-panel">
-                <div class="toggle-right-btn" id="toggle-right-panel"> &lt; </div>
-
-                <div class="panel-header">
-                    属性 Properties
-                </div>
-                <div class="panel-content">
-                    <div class="prop-group">
-                        <div class="group-title">预设尺寸 Presets</div>
-                        <div class="preset-grid">
-                            <div class="preset-btn" data-w="794" data-h="1123">
-                                A4
-                                <span>794 x 1123</span>
-                            </div>
-                            <div class="preset-btn" data-w="559" data-h="794">
-                                A5
-                                <span>559 x 794</span>
-                            </div>
-                            <div class="preset-btn" data-w="816" data-h="1056">
-                                Letter
-                                <span>816 x 1056</span>
-                            </div>
-                            <div class="preset-btn" data-w="1056" data-h="1632">
-                                Tabloid
-                                <span>1056 x 1632</span>
-                            </div>
-                            <div class="preset-btn" data-w="768" data-h="960">
-                                iPad
-                                <span>768 x 960</span>
-                            </div>
-                            <div class="preset-btn" data-w="1000" data-h="1000">
-                                Square
-                                <span>1000 x 1000</span>
+                <!-- Properties Content - changes based on selection -->
+                <div class="panel-content" id="panel-content">
+                    <!-- Default: Canvas Settings -->
+                    <div id="panel-canvas">
+                        <div class="prop-section">
+                            <div class="prop-section-title">预设尺寸</div>
+                            <div class="preset-grid">
+                                <div class="preset-btn" data-w="794" data-h="1123">A4<span>794×1123</span></div>
+                                <div class="preset-btn" data-w="559" data-h="794">A5<span>559×794</span></div>
+                                <div class="preset-btn" data-w="816" data-h="1056">Letter<span>816×1056</span></div>
+                                <div class="preset-btn" data-w="1000" data-h="1000">Square<span>1000×1000</span></div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Canvas Size Section -->
-                    <div class="prop-group">
-                        <div class="group-title">画布尺寸 Canvas Size</div>
-                        <div class="prop-row">
-                            <label>预设 Preset</label>
-                            <div class="chip-list">
-                                <button class="chip" data-w="595" data-h="842">A4</button>
-                                <button class="chip" data-w="390" data-h="844">Phone</button>
+                        <div class="prop-section">
+                            <div class="prop-section-title">画布尺寸</div>
+                            <div class="prop-row">
+                                <label>W</label>
+                                <input type="number" id="canvas-width" class="prop-input" value="500">
+                                <label>H</label>
+                                <input type="number" id="canvas-height" class="prop-input" value="700">
                             </div>
                         </div>
-                        <div class="prop-row">
-                            <label>W</label>
-                            <input type="number" id="canvas-width" class="input-sm" value="500">
-                        </div>
-                        <div class="prop-row">
-                            <label>H</label>
-                            <input type="number" id="canvas-height" class="input-sm" value="700">
-                        </div>
-                    </div>
 
-                    <div class="divider"></div>
+                        <div class="prop-divider"></div>
 
-                    <!-- Layout Section -->
-                    <div class="prop-group">
-                        <div class="group-title">排版 Layout</div>
-                        <div class="prop-row">
-                            <label>模式 Mode</label>
-                            <div class="radio-cards">
-                                <label class="radio-card">
-                                    <input type="radio" name="layout-mode" value="vertical" checked>
-                                    <span>竖排</span>
+                        <div class="prop-section">
+                            <div class="prop-section-title">排版模式</div>
+                            <div class="prop-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="layout-mode" value="vertical" checked> 竖排
                                 </label>
-                                <label class="radio-card">
-                                    <input type="radio" name="layout-mode" value="horizontal">
-                                    <span>横排</span>
+                                <label class="radio-label">
+                                    <input type="radio" name="layout-mode" value="horizontal"> 横排
                                 </label>
                             </div>
                         </div>
 
-                    </div>
+                        <div class="prop-divider"></div>
 
-                    <div class="divider"></div>
-
-                    <!-- Font Section -->
-                    <div class="prop-group">
-                        <div class="group-title">字体 Font</div>
-                        <div class="prop-row">
-                            <label>字族 Family</label>
-                            <select id="font-family" class="input-sm" style="width: 100%;">
+                        <div class="prop-section">
+                            <div class="prop-section-title">字体</div>
+                            <select id="font-family" class="prop-select">
                                 <option value="'STKaiti', 'KaiTi', serif">楷體 KaiTi</option>
                                 <option value="'Inter', 'Segoe UI', sans-serif">現代無襯線 Inter</option>
                                 <option value="'Fira Code', 'Consolas', monospace">等寬 Fira Code</option>
@@ -168,18 +193,68 @@
                         </div>
                     </div>
 
+                    <!-- Image Properties Panel (shown when image is selected) -->
+                    <div id="panel-image" style="display:none;">
+                        <div class="prop-section">
+                            <div class="prop-section-title">位置与尺寸</div>
+                            <div class="coord-grid">
+                                <span class="coord-label" id="coord-tl">[0, 0]</span>
+                                <div class="coord-box"></div>
+                                <span class="coord-label" id="coord-tr">[0, 0]</span>
+                                <span class="coord-label" id="coord-bl">[0, 0]</span>
+                                <span class="coord-label" id="coord-br">[0, 0]</span>
+                            </div>
+                        </div>
 
+                        <div class="prop-divider"></div>
+
+                        <div class="prop-section">
+                            <div class="prop-section-title">边框</div>
+                            <div class="prop-row prop-row-between">
+                                <label>颜色</label>
+                                <input type="color" id="img-border-color" class="prop-color" value="#000000">
+                            </div>
+                            <div class="prop-row prop-row-between">
+                                <label>宽度</label>
+                                <input type="number" id="img-border-width" class="prop-input-sm" value="0" min="0">
+                            </div>
+                        </div>
+
+                        <div class="prop-divider"></div>
+
+                        <div class="prop-section">
+                            <div class="prop-section-title">图像</div>
+                            <div class="prop-row prop-row-between">
+                                <label>图片</label>
+                                <span class="prop-link" id="upload-image-link">上传图片</span>
+                            </div>
+                            <div class="prop-row prop-row-between">
+                                <label>模式</label>
+                                <div class="radio-group-vertical">
+                                    <label class="radio-label">
+                                        <input type="radio" name="img-draw-mode" value="fill"> FILL
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="img-draw-mode" value="cover" checked> COVER
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="img-draw-mode" value="contain"> CONTAIN
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </div>
     </div>
 
-    <!-- Floating Toolbar -->
+    <!-- Floating Text Toolbar -->
     <div id="floating-toolbar" class="floating-toolbar">
         <button id="ft-bold" title="粗体"><b>B</b></button>
         <button id="ft-italic" title="斜体"><i>I</i></button>
         <button id="ft-underline" title="下划线"><u>U</u></button>
-        <!-- Custom Combobox -->
+        <!-- Font Size Combobox -->
         <div class="ft-combobox" id="ft-font-size-combobox">
             <input type="text" id="ft-font-size-input" class="ft-combobox-input" title="字体大小" value="16px"
                 autocomplete="off">
@@ -190,14 +265,11 @@
                 </svg>
             </button>
             <div class="ft-combobox-dropdown" id="ft-font-size-dropdown">
-                <div class="ft-option" data-value="8">8px</div>
-                <div class="ft-option" data-value="10">10px</div>
                 <div class="ft-option" data-value="12">12px</div>
                 <div class="ft-option" data-value="14">14px</div>
                 <div class="ft-option" data-value="16">16px</div>
                 <div class="ft-option" data-value="18">18px</div>
                 <div class="ft-option" data-value="20">20px</div>
-                <div class="ft-option" data-value="22">22px</div>
                 <div class="ft-option" data-value="24">24px</div>
                 <div class="ft-option" data-value="28">28px</div>
                 <div class="ft-option" data-value="32">32px</div>
@@ -205,11 +277,10 @@
                 <div class="ft-option" data-value="48">48px</div>
                 <div class="ft-option" data-value="64">64px</div>
                 <div class="ft-option" data-value="72">72px</div>
-                <div class="ft-option" data-value="96">96px</div>
             </div>
         </div>
         <div class="separator"></div>
-        <!-- Font Color Picker -->
+        <!-- Font Color -->
         <div class="ft-color-wrap">
             <button id="ft-color-trigger" title="字体颜色" class="ft-color-btn">
                 <span style="font-weight:bold;">A</span>
@@ -218,19 +289,19 @@
             <div id="ft-color-palette" class="ft-palette">
                 <div class="ft-palette-label">字体颜色</div>
                 <div class="ft-swatches">
-                    <span class="ft-swatch" data-color="#2c3e50" style="background:#2c3e50;" title="默认"></span>
-                    <span class="ft-swatch" data-color="#c0392b" style="background:#c0392b;" title="红"></span>
-                    <span class="ft-swatch" data-color="#e67e22" style="background:#e67e22;" title="橙"></span>
-                    <span class="ft-swatch" data-color="#f1c40f" style="background:#f1c40f;" title="黄"></span>
-                    <span class="ft-swatch" data-color="#27ae60" style="background:#27ae60;" title="绿"></span>
-                    <span class="ft-swatch" data-color="#2980b9" style="background:#2980b9;" title="蓝"></span>
-                    <span class="ft-swatch" data-color="#8e44ad" style="background:#8e44ad;" title="紫"></span>
-                    <span class="ft-swatch" data-color="#ecf0f1" style="background:#ecf0f1;border:1px solid #ccc;"
-                        title="浅灰"></span>
+                    <span class="ft-swatch" data-color="#2c3e50" style="background:#2c3e50;"></span>
+                    <span class="ft-swatch" data-color="#c0392b" style="background:#c0392b;"></span>
+                    <span class="ft-swatch" data-color="#e67e22" style="background:#e67e22;"></span>
+                    <span class="ft-swatch" data-color="#f1c40f" style="background:#f1c40f;"></span>
+                    <span class="ft-swatch" data-color="#27ae60" style="background:#27ae60;"></span>
+                    <span class="ft-swatch" data-color="#2980b9" style="background:#2980b9;"></span>
+                    <span class="ft-swatch" data-color="#8e44ad" style="background:#8e44ad;"></span>
+                    <span class="ft-swatch" data-color="#ecf0f1"
+                        style="background:#ecf0f1;border:1px solid #ccc;"></span>
                 </div>
             </div>
         </div>
-        <!-- Highlight Color Picker -->
+        <!-- Highlight -->
         <div class="ft-color-wrap">
             <button id="ft-bg-trigger" title="荧光笔" class="ft-color-btn">
                 <span style="font-weight:bold;">H</span>
@@ -239,27 +310,26 @@
             <div id="ft-bg-palette" class="ft-palette">
                 <div class="ft-palette-label">荧光笔</div>
                 <div class="ft-swatches">
-                    <span class="ft-swatch ft-swatch-clear" data-color="" title="清除">✕</span>
-                    <span class="ft-swatch" data-color="#fff9c4" style="background:#fff9c4;border:1px solid #e0d87a;"
-                        title="黄"></span>
-                    <span class="ft-swatch" data-color="#c8e6c9" style="background:#c8e6c9;border:1px solid #a5cfa7;"
-                        title="绿"></span>
-                    <span class="ft-swatch" data-color="#bbdefb" style="background:#bbdefb;border:1px solid #90c2f0;"
-                        title="蓝"></span>
-                    <span class="ft-swatch" data-color="#f8bbd0" style="background:#f8bbd0;border:1px solid #e899b1;"
-                        title="粉"></span>
-                    <span class="ft-swatch" data-color="#ffe0b2" style="background:#ffe0b2;border:1px solid #e0c090;"
-                        title="橙"></span>
-                    <span class="ft-swatch" data-color="#e1bee7" style="background:#e1bee7;border:1px solid #c9a0cf;"
-                        title="紫"></span>
-                    <span class="ft-swatch" data-color="#d7ccc8" style="background:#d7ccc8;border:1px solid #b8a8a0;"
-                        title="灰"></span>
+                    <span class="ft-swatch ft-swatch-clear" data-color="">✕</span>
+                    <span class="ft-swatch" data-color="#fff9c4" style="background:#fff9c4;"></span>
+                    <span class="ft-swatch" data-color="#c8e6c9" style="background:#c8e6c9;"></span>
+                    <span class="ft-swatch" data-color="#bbdefb" style="background:#bbdefb;"></span>
+                    <span class="ft-swatch" data-color="#f8bbd0" style="background:#f8bbd0;"></span>
+                    <span class="ft-swatch" data-color="#ffe0b2" style="background:#ffe0b2;"></span>
+                    <span class="ft-swatch" data-color="#e1bee7" style="background:#e1bee7;"></span>
                 </div>
             </div>
         </div>
         <div class="separator"></div>
         <button id="ft-clear" title="清除样式">✕</button>
     </div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="image-file-input" accept="image/*" style="display:none;">
+    <input type="file" id="json-file-input" accept=".json" style="display:none;">
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="module" src="/src/index.ts"></script>
 </body>
 
