@@ -226,6 +226,41 @@ document.querySelectorAll('input[name="layout-mode"]').forEach(el => {
 const fontSelect = document.getElementById('font-family') as HTMLSelectElement;
 fontSelect?.addEventListener('change', () => jianzi.setFont(fontSelect.value));
 
+// Background color swatches
+document.querySelectorAll('.bg-color-swatch').forEach(swatch => {
+  swatch.addEventListener('click', (e) => {
+    document.querySelectorAll('.bg-color-swatch').forEach(s => s.classList.remove('active'));
+    const target = e.target as HTMLElement;
+    target.classList.add('active');
+    const color = target.dataset.color || '#fdfaf5';
+    jianzi.updateOptions({ backgroundColor: color });
+  });
+});
+
+// Export Settings
+const watermarkCheck = document.getElementById('export-watermark') as HTMLInputElement;
+watermarkCheck?.addEventListener('change', () => {
+  jianzi.updateOptions({ watermark: watermarkCheck.checked });
+});
+
+const dateSelect = document.getElementById('export-date') as HTMLSelectElement;
+dateSelect?.addEventListener('change', () => {
+  jianzi.updateOptions({ dateDisplay: dateSelect.value as 'none' | 'gregorian' | 'lunar' });
+});
+
+const dateDayCheck = document.getElementById('export-date-day') as HTMLInputElement;
+dateDayCheck?.addEventListener('change', () => {
+  jianzi.updateOptions({ dateIncludeDay: dateDayCheck.checked });
+});
+
+// Initial read for export settings
+jianzi.updateOptions({
+  backgroundColor: '#fdfaf5',
+  watermark: watermarkCheck?.checked ?? false,
+  dateDisplay: (dateSelect?.value as 'none' | 'gregorian' | 'lunar') || 'none',
+  dateIncludeDay: dateDayCheck?.checked ?? false
+});
+
 // ============================================================
 // 12. Image Properties Panel
 // ============================================================

@@ -151,12 +151,14 @@
                         <div class="prop-section">
                             <div class="prop-section-title">预设尺寸</div>
                             <div class="preset-grid">
-                                <div class="preset-btn" data-w="794" data-h="1123">A4<span>794×1123</span></div>
-                                <div class="preset-btn" data-w="559" data-h="794">A5<span>559×794</span></div>
-                                <div class="preset-btn" data-w="816" data-h="1056">Letter<span>816×1056</span></div>
-                                <div class="preset-btn" data-w="1000" data-h="1000">Square<span>1000×1000</span></div>
-                                <div class="preset-btn" data-w="1056" data-h="1632">Tabloid<span>1056x1632</span>
+                                <div class="preset-btn" data-w="500" data-h="700">信笺<span>500×700</span></div>
+                                <div class="preset-btn" data-w="390" data-h="844">手机竖屏<span>390×844</span></div>
+                                <div class="preset-btn" data-w="800" data-h="800">社交方格<span>800×800</span></div>
+                                <div class="preset-btn" data-w="794" data-h="1123">A4打印<span>794×1123</span></div>
+                                <div class="preset-btn" data-w="816" data-h="1056">信件 Letter<span>816×1056</span></div>
+                                <div class="preset-btn" data-w="1056" data-h="1632">小报 Tabloid<span>1056×1632</span>
                                 </div>
+                                <div class="preset-btn" data-w="1200" data-h="630">网页横封<span>1200×630</span></div>
                             </div>
                         </div>
 
@@ -189,11 +191,80 @@
                         <div class="prop-section">
                             <div class="prop-section-title">字体</div>
                             <select id="font-family" class="prop-select">
-                                <option value="'STKaiti', 'KaiTi', serif">楷體 KaiTi</option>
-                                <option value="'Inter', 'Segoe UI', sans-serif">現代無襯線 Inter</option>
-                                <option value="'Fira Code', 'Consolas', monospace">等寬 Fira Code</option>
-                                <option value="'Georgia', 'Palatino', serif">優雅襯線 Georgia</option>
+                                <option value="'STKaiti', 'KaiTi', serif">楷体 KaiTi</option>
+                                <option value="'STSong', 'SimSun', 'Songti SC', serif">宋体 / 明体 SongTi</option>
+                                <option value="'STFangsong', 'FangSong', 'FangSong_GB2312', serif">仿宋 FangSong</option>
+                                <option value="'STLiti', 'LiSu', 'Weibei SC', serif">隶书 LiSu</option>
+                                <option value="'STXingkai', 'Xingkai SC', 'HuaWenXingKai', serif">行体 XingKai</option>
+                                <option value="'Inter', 'Segoe UI', sans-serif">现代无衬线 Inter</option>
+                                <option value="'Georgia', 'Palatino', serif">经典衬线 Georgia</option>
                             </select>
+                        </div>
+
+                        <div class="prop-divider"></div>
+
+                        <div class="prop-section">
+                            <div class="prop-section-title">背景颜色</div>
+                            <div class="bg-color-grid">
+                                <div class="bg-color-swatch active" data-color="#fdfaf5" style="background: #fdfaf5;"
+                                    title="默认"></div>
+                                <div class="bg-color-swatch" data-color="#ffffff" style="background: #ffffff;"
+                                    title="纯白"></div>
+                                <div class="bg-color-swatch" data-color="#222222" style="background: #222222;"
+                                    title="深灰"></div>
+                                <div class="bg-color-swatch" data-color="#e0e0e0" style="background: #e0e0e0;"
+                                    title="浅灰"></div>
+                                <div class="bg-color-swatch" data-color="#2c2f3d" style="background: #2c2f3d;"
+                                    title="藏蓝"></div>
+                                <div class="bg-color-swatch" data-color="#363636" style="background: #363636;"
+                                    title="深褐"></div>
+                                <div class="bg-color-swatch" data-color="#b8ac9c" style="background: #b8ac9c;"
+                                    title="米灰"></div>
+                                <div class="bg-color-swatch" data-color="#1e4554" style="background: #1e4554;"
+                                    title="深青"></div>
+                                <div class="bg-color-swatch" data-color="#004d80" style="background: #004d80;"
+                                    title="海蓝"></div>
+                                <div class="bg-color-swatch" data-color="#202b46" style="background: #202b46;"
+                                    title="深靛蓝"></div>
+                                <div class="bg-color-swatch" data-color="#a9adaf" style="background: #a9adaf;"
+                                    title="银灰"></div>
+                                <div class="bg-color-swatch" data-color="#e6e5e3" style="background: #e6e5e3;"
+                                    title="暖白"></div>
+                                <div class="bg-color-swatch" data-color="#a3b1a6" style="background: #a3b1a6;"
+                                    title="豆绿"></div>
+                                <div class="bg-color-swatch" data-color="#4a6b5d" style="background: #4a6b5d;"
+                                    title="墨绿"></div>
+                                <div class="bg-color-swatch" data-color="#8b9db1" style="background: #8b9db1;"
+                                    title="灰蓝"></div>
+                                <div class="bg-color-swatch" data-color="#732626" style="background: #732626;"
+                                    title="暗红"></div>
+                            </div>
+                        </div>
+
+                        <div class="prop-divider"></div>
+
+                        <div class="prop-section">
+                            <div class="prop-section-title">导出设置</div>
+                            <div class="prop-row prop-row-between">
+                                <label>水印</label>
+                                <label class="radio-label">
+                                    <input type="checkbox" id="export-watermark"> JianZi 水印
+                                </label>
+                            </div>
+                            <div class="prop-row prop-row-between" style="margin-top: 8px;">
+                                <label>日期</label>
+                                <select id="export-date" class="prop-select">
+                                    <option value="none" selected>不显示</option>
+                                    <option value="gregorian">公历</option>
+                                    <option value="lunar">农历</option>
+                                </select>
+                            </div>
+                            <div class="prop-row prop-row-between" style="margin-top: 8px;">
+                                <label>精确到日</label>
+                                <label class="radio-label">
+                                    <input type="checkbox" id="export-date-day">
+                                </label>
+                            </div>
                         </div>
                     </div>
 
