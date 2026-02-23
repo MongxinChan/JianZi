@@ -248,7 +248,9 @@ export class TextDelta extends Delta {
     }
 
     measure(ctx: CanvasRenderingContext2D, mode: LayoutMode = 'horizontal', areaWidth: number = 9999, areaHeight: number = 9999): { width: number; height: number } {
-        const layout = this._layout(mode, areaWidth, areaHeight);
+        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
+        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
+        const layout = this._layout(mode, layoutW, layoutH);
         return {
             width: this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth,
             height: this.layoutConstraintH > 0 ? this.layoutConstraintH : layout.totalHeight,
@@ -352,7 +354,9 @@ export class TextDelta extends Delta {
      * Yes.
      */
     public getCharIndexAt(ctx: CanvasRenderingContext2D, x: number, y: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): number {
-        const layout = this._layout(mode, areaWidth, areaHeight);
+        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
+        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
+        const layout = this._layout(mode, layoutW, layoutH);
         // For simplicity, we assume hitting anywhere inside the char box returns its index.
         const localX = x - this.x;
         const localY = y - this.y;
@@ -403,12 +407,76 @@ export class TextDelta extends Delta {
         return -1; // Miss
     }
 
+    public getCaretRect(ctx: CanvasRenderingContext2D, index: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): { x: number; y: number; width: number; height: number } | null {
+        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
+        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
+        const layout = this._layout(mode, layoutW, layoutH);
+
+        const posIdx = Math.max(0, Math.min(index, layout.positions.length));
+        let drawX = this.x;
+        let drawY = this.y;
+        let drawW = 2;
+        let drawH = this.fontSize;
+
+        if (layout.positions.length === 0) {
+            if (mode === 'vertical') {
+                drawX = this.layoutConstraintW > 0 ? (this.x + this.layoutConstraintW - this.fontSize) : this.x;
+                drawW = this.fontSize;
+                drawH = 2;
+            } else {
+                drawH = this.fontSize * this.lineHeight;
+                drawW = 2;
+            }
+            return { x: drawX, y: drawY, width: drawW, height: drawH };
+        }
+
+        if (posIdx < layout.positions.length) {
+            const pos = layout.positions[posIdx];
+            const { cx, cy, width, height, colWidth, rowHeight } = pos;
+
+            if (mode === 'vertical') {
+                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+                const rtlX = boxWidth - (cx + (colWidth || width));
+                drawX = this.x + rtlX;
+                drawW = colWidth || width;
+                drawH = 2;
+                drawY = this.y + cy;
+            } else {
+                drawX = this.x + cx;
+                drawY = this.y + cy;
+                drawW = 2;
+                drawH = rowHeight || height;
+            }
+        } else {
+            const pos = layout.positions[layout.positions.length - 1];
+            const { cx, cy, width, height, colWidth, rowHeight } = pos;
+
+            if (mode === 'vertical') {
+                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+                const rtlX = boxWidth - (cx + (colWidth || width));
+                drawX = this.x + rtlX;
+                drawW = colWidth || width;
+                drawH = 2;
+                drawY = this.y + cy + height;
+            } else {
+                drawX = this.x + cx + width;
+                drawY = this.y + cy;
+                drawW = 2;
+                drawH = rowHeight || height;
+            }
+        }
+
+        return { x: drawX, y: drawY, width: drawW, height: drawH };
+    }
+
     /**
      * Get rectangles for a range of characters.
      * Used for drawing selection highlight.
      */
     public getRectsForRange(ctx: CanvasRenderingContext2D, start: number, end: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): { x: number; y: number; width: number; height: number }[] {
-        const layout = this._layout(mode, areaWidth, areaHeight);
+        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
+        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
+        const layout = this._layout(mode, layoutW, layoutH);
         const rects: { x: number; y: number; width: number; height: number }[] = [];
 
         // Clamp

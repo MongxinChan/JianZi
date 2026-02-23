@@ -94,6 +94,14 @@ export class SelectState extends BaseToolState {
             if (idx !== -1) {
                 this.isSelectingText = true;
                 this.editor.selectionRange = { start: idx, end: idx };
+
+                const inputElement = this.editor.getInputElement();
+                if (inputElement) {
+                    inputElement.setSelectionRange(idx, idx);
+                    // Focus the input to ensure keyboard inputs are caught
+                    setTimeout(() => inputElement.focus(), 0);
+                }
+
                 this.isDragging = false; // Prevent dragging
                 this.editor.refresh();
                 this.bindGlobalEvents();
@@ -259,6 +267,14 @@ export class SelectState extends BaseToolState {
                 const idx = delta.getCharIndexAt(ctx, x, y, mode, width, height);
                 if (idx !== -1) {
                     this.editor.selectionRange.end = idx;
+
+                    const inputElement = this.editor.getInputElement();
+                    if (inputElement) {
+                        const start = Math.min(this.editor.selectionRange.start, this.editor.selectionRange.end);
+                        const end = Math.max(this.editor.selectionRange.start, this.editor.selectionRange.end);
+                        inputElement.setSelectionRange(start, end, this.editor.selectionRange.start > this.editor.selectionRange.end ? "backward" : "forward");
+                    }
+
                     this.editor.refresh();
                 }
             }

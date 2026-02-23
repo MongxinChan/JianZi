@@ -17,8 +17,8 @@ export class Editor {
   private layerManager: LayerManager;
   public deltas: DeltaSet;
   private options: JianZiOptions;
-  // TODO: Select/Input logic will be moved to InteractionLayer later
   private inputElement: HTMLTextAreaElement | null = null;
+  private caretElement: HTMLDivElement | null = null;
   public selectedDeltaId: string | null = null;
   public selectionRange: { start: number; end: number } | null = null;
   private currentFont: string = "'STKaiti', 'KaiTi', serif";
@@ -279,6 +279,25 @@ export class Editor {
     document.body.appendChild(input);
     this.inputElement = input;
 
+    const caret = document.createElement('div');
+    Object.assign(caret.style, {
+      position: 'absolute',
+      pointerEvents: 'none',
+      backgroundColor: '#1890ff',
+      zIndex: '20',
+      display: 'none',
+      animation: 'caret-blink 1s step-end infinite'
+    });
+    this.options.container.appendChild(caret);
+    this.caretElement = caret;
+
+    if (!document.getElementById('caret-blink-style')) {
+      const style = document.createElement('style');
+      style.id = 'caret-blink-style';
+      style.innerHTML = `@keyframes caret-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }`;
+      document.head.appendChild(style);
+    }
+
     // Input handling
     let isComposing = false;
 
@@ -295,6 +314,17 @@ export class Editor {
     input.addEventListener('input', (e) => {
       if (!isComposing) {
         handleInput((e.target as HTMLTextAreaElement).value);
+      }
+    });
+
+    document.addEventListener('selectionchange', () => {
+      if (document.activeElement === input && this.selectedDeltaId && this.toolMode === 'select') {
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        if (!this.selectionRange || this.selectionRange.start !== start || this.selectionRange.end !== end) {
+          this.selectionRange = { start, end };
+          this.refresh();
+        }
       }
     });
 
@@ -370,6 +400,11 @@ export class Editor {
     this.layerManager.render(this.deltas, mode);
     // Draw interaction layer (Selection box)
     this.layerManager.interactionLayer.clear();
+
+    if (this.caretElement) {
+      this.caretElement.style.display = 'none';
+    }
+
     const selectedDelta = this.selectedDeltaId ? this.deltas.get(this.selectedDeltaId) : null;
     if (selectedDelta) {
       // @ts-ignore
@@ -379,17 +414,30 @@ export class Editor {
       if (selectedDelta instanceof TextDelta && this.selectionRange) {
         const s = Math.min(this.selectionRange.start, this.selectionRange.end);
         const e = Math.max(this.selectionRange.start, this.selectionRange.end);
-        // Inclusive - Inclusive (Character Box Selection)
-        const rects = selectedDelta.getRectsForRange(
+
+        if (s === e) {
           // @ts-ignore
-          this.layerManager.canvasLayer.ctx,
-          s,
-          e + 1,
-          mode,
-          this.layerManager.canvasLayer.width,
-          this.layerManager.canvasLayer.height
-        );
-        this.layerManager.interactionLayer.drawTextSelection(rects);
+          const caretRect = selectedDelta.getCaretRect(this.layerManager.canvasLayer.ctx, s, mode, this.layerManager.canvasLayer.width, this.layerManager.canvasLayer.height);
+          if (caretRect && this.caretElement && this.toolMode === 'select') {
+            this.caretElement.style.display = 'block';
+            this.caretElement.style.left = `${caretRect.x}px`;
+            this.caretElement.style.top = `${caretRect.y}px`;
+            this.caretElement.style.width = `${caretRect.width}px`;
+            this.caretElement.style.height = `${caretRect.height}px`;
+          }
+        } else {
+          // Inclusive - Inclusive (Character Box Selection)
+          const rects = selectedDelta.getRectsForRange(
+            // @ts-ignore
+            this.layerManager.canvasLayer.ctx,
+            s,
+            e + 1,
+            mode,
+            this.layerManager.canvasLayer.width,
+            this.layerManager.canvasLayer.height
+          );
+          this.layerManager.interactionLayer.drawTextSelection(rects);
+        }
       }
     }
   }
