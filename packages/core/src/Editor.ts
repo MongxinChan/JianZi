@@ -12,6 +12,8 @@ import { AddOp, UpdateOp } from './history/Operation';
 import { ViewportManager } from './core/ViewportManager';
 import { InputManager } from './core/InputManager';
 import { SelectionManager } from './core/SelectionManager';
+import { EventDispatcher } from './core/EventDispatcher';
+import { Serializer } from './core/Serializer';
 
 /**
  * 编辑器交互类：负责处理用户输入、状态管理与渲染同步
@@ -22,6 +24,8 @@ export class Editor {
   private options: JianZiOptions;
   public inputManager: InputManager;
   public selectionManager: SelectionManager;
+  public eventDispatcher: EventDispatcher;
+  public serializer: Serializer;
   public currentFont: string = "'STKaiti', 'KaiTi', serif";
   public toolMode: 'select' | 'hand' = 'select';
   public viewportManager: ViewportManager;
@@ -41,6 +45,8 @@ export class Editor {
     this.viewportManager = new ViewportManager(options);
     this.selectionManager = new SelectionManager(this);
     this.inputManager = new InputManager(this);
+    this.eventDispatcher = new EventDispatcher(this);
+    this.serializer = new Serializer(this);
 
     // Initialize states
     this.states = {
@@ -48,8 +54,11 @@ export class Editor {
       'hand': new GrabState(this)
     };
 
-    this.bindEvents();
     this.setTool('select');
+  }
+
+  public getActiveState(): ToolState | null {
+    return this.activeState;
   }
 
   public getLayerManager() {
@@ -102,124 +111,21 @@ export class Editor {
    * @param scale 导出放大倍数，默认 3x (相当于 ~300 DPI) 以保证 PDF 和图片的绝对清晰度
    */
   public exportImage(scale: number = 3): string {
-    const mode = this.options.mode || 'vertical';
-    // @ts-ignore
-    return this.layerManager.canvasLayer.exportHighRes(this.deltas, mode, scale);
+    return this.serializer.exportImage(scale);
   }
 
   /**
    * 序列化当前画布为 JSON 字符串
    */
   public exportJSON(): string {
-    const deltas = this.deltas.getAll().map(d => {
-      if (d instanceof TextDelta) {
-        return {
-          id: d.id,
-          type: 'text',
-          x: d.x,
-          y: d.y,
-          width: d.width,
-          height: d.height,
-          fontFamily: d.fontFamily,
-          fontSize: d.fontSize,
-          layoutConstraintW: d.layoutConstraintW,
-          layoutConstraintH: d.layoutConstraintH,
-          fragments: d.fragments,
-        };
-      } else if (d instanceof ImageDelta) {
-        return {
-          id: d.id,
-          type: 'image',
-          x: d.x,
-          y: d.y,
-          width: d.width,
-          height: d.height,
-          src: d.src,
-          drawMode: d.drawMode,
-          borderColor: d.borderColor,
-          borderWidth: d.borderWidth,
-        };
-      }
-      return null;
-    }).filter(Boolean);
-
-    const payload = {
-      version: '1.0',
-      canvas: {
-        width: this.options.width,
-        height: this.options.height,
-        padding: this.options.padding ?? 60,
-        mode: this.options.mode ?? 'vertical',
-      },
-      deltas,
-    };
-
-    return JSON.stringify(payload, null, 2);
+    return this.serializer.exportJSON();
   }
 
   /**
    * 从 JSON 字符串恢复画布内容
    */
   public loadJSON(json: string): void {
-    try {
-      const payload = JSON.parse(json);
-
-      // Restore canvas size and options
-      if (payload.canvas) {
-        this.updateOptions({
-          width: payload.canvas.width,
-          height: payload.canvas.height,
-          padding: payload.canvas.padding,
-          mode: payload.canvas.mode,
-        });
-      }
-
-      // Clear existing content
-      this.deltas.clear();
-      this.selectionManager.selectedDeltaId = null;
-      this.selectionManager.selectionRange = null;
-      this.history.clear();
-
-      // Rebuild deltas
-      for (const raw of payload.deltas ?? []) {
-        if (raw.type === 'text') {
-          const td = new TextDelta({
-            id: raw.id,
-            type: 'text' as any,
-            x: raw.x,
-            y: raw.y,
-            width: raw.width,
-            height: raw.height,
-            fontFamily: raw.fontFamily,
-            fontSize: raw.fontSize,
-            fragments: raw.fragments,
-          });
-          td.layoutConstraintW = raw.layoutConstraintW ?? 0;
-          td.layoutConstraintH = raw.layoutConstraintH ?? 0;
-          this.deltas.add(td);
-        } else if (raw.type === 'image') {
-          const imgDelta = new ImageDelta(
-            {
-              id: raw.id,
-              x: raw.x,
-              y: raw.y,
-              width: raw.width,
-              height: raw.height,
-              src: raw.src,
-              drawMode: raw.drawMode ?? 'cover',
-              borderColor: raw.borderColor ?? 'transparent',
-              borderWidth: raw.borderWidth ?? 0,
-            },
-            () => this.refresh(),
-          );
-          this.deltas.add(imgDelta);
-        }
-      }
-
-      this.refresh();
-    } catch (e) {
-      console.error('loadJSON: failed to parse JSON', e);
-    }
+    this.serializer.loadJSON(json);
   }
 
   /**
@@ -245,100 +151,6 @@ export class Editor {
    */
   public getOptions(): JianZiOptions {
     return this.options;
-  }
-
-  // Caret and Keyboard shortcuts for Undo/Redo & Nudging
-  // TODO: Move DOM events to EventDispatcher
-
-  private bindEvents(): void {
-    const eventBase = (this.options.eventTarget as HTMLElement | Window | Document) || this.options.container;
-
-    // Mouse Interaction Delegated to activeState
-    eventBase.addEventListener('mousedown', ((e: Event) => {
-      // Only process layout logic if clicking outside active layers? Handled in SelectState.
-      if (this.activeState) this.activeState.onMouseDown(e as MouseEvent);
-    }) as EventListener);
-
-    eventBase.addEventListener('mousemove', ((e: Event) => {
-      if (this.activeState) this.activeState.onMouseMove(e as MouseEvent);
-    }) as EventListener);
-
-    eventBase.addEventListener('mouseup', ((e: Event) => {
-      if (this.activeState) this.activeState.onMouseUp(e as MouseEvent);
-    }) as EventListener);
-
-    // [Infinite Panning] Wheel Support (Trackpad/Mouse Wheel)
-    eventBase.addEventListener('wheel', ((e: Event) => {
-      if (this.activeState) this.activeState.onWheel(e as WheelEvent);
-    }) as EventListener, { passive: false });
-
-    // Keyboard shortcuts for Undo/Redo & Nudging
-    window.addEventListener('keydown', (e) => {
-      // Identify if the keydown happened while our hidden bridge textarea has focus
-      const target = e.target as HTMLElement;
-      const isOurTextarea = target === this.inputManager.inputElement;
-
-      // Ignore if user is typing in generic page inputs
-      if (target && target.tagName === 'INPUT') {
-        return;
-      }
-
-      if (target && target.tagName === 'TEXTAREA') {
-        // If it's our hidden textarea, only ignore arrow keys if the user is actively editing text inside it
-        if (isOurTextarea && this.selectionManager.selectionRange !== null) {
-          return;
-        }
-        // If it's some other random textarea on the page, ignore it entirely
-        if (!isOurTextarea) {
-          return;
-        }
-      }
-
-      // Arrow keys to nudge selection
-      if (this.selectionManager.selectedDeltaId) {
-        const delta = this.deltas.get(this.selectionManager.selectedDeltaId);
-        if (delta) {
-          const step = e.shiftKey ? 10 : 1;
-          let moved = false;
-          switch (e.key) {
-            case 'ArrowUp':
-              delta.y -= step;
-              moved = true;
-              break;
-            case 'ArrowDown':
-              delta.y += step;
-              moved = true;
-              break;
-            case 'ArrowLeft':
-              delta.x -= step;
-              moved = true;
-              break;
-            case 'ArrowRight':
-              delta.x += step;
-              moved = true;
-              break;
-          }
-          if (moved) {
-            this.refresh();
-            // Optional: push to history (debounced or on keyup ideally, but fine for now if omitted for small nudges)
-            e.preventDefault();
-            return;
-          }
-        }
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        if (e.shiftKey) {
-          this.redo();
-        } else {
-          this.undo();
-        }
-        e.preventDefault();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        this.redo();
-        e.preventDefault();
-      }
-    });
   }
 
   public refresh(): void {
@@ -378,9 +190,7 @@ export class Editor {
     return '';
   }
 
-  /**
-   * 设置所有文本的字体
-   */
+
   /**
    * 设置字体 (支持选区操作)
    */

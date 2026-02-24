@@ -1,0 +1,21 @@
+../../node_modules/.pnpm/vite@6.4.1/node_modules/vite/types/hot.d.ts(4,4): error TS2585: 'Symbol' only refers to a type, but is being used as a value here. Do you need to change your target library? Try changing the 'lib' compiler option to es2015 or later.
+../core/src/core/InputManager.ts(17,16): error TS2550: Property 'assign' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/core/SelectionManager.ts(20,16): error TS2550: Property 'assign' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/Editor.ts(139,12): error TS2550: Property 'assign' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/history/Operation.ts(58,20): error TS2550: Property 'assign' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/history/Operation.ts(66,20): error TS2550: Property 'assign' does not exist on type 'ObjectConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/model/DeltaSet.ts(4,21): error TS2583: Cannot find name 'Map'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/model/DeltaSet.ts(7,27): error TS2583: Cannot find name 'Map'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/model/DeltaSet.ts(23,22): error TS2550: Property 'from' does not exist on type 'ArrayConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+../core/src/model/DeltaSet.ts(41,30): error TS2550: Property 'from' does not exist on type 'ArrayConstructor'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2015' or later.
+src/index.ts(306,26): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(306,69): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(318,24): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(318,67): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(328,24): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(328,67): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(343,24): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(343,67): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(367,24): error TS2551: Property 'selectionRange' does not exist on type 'Editor'. Did you mean 'selectionManager'?
+src/index.ts(368,24): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.
+src/index.ts(368,67): error TS2339: Property 'selectedDeltaId' does not exist on type 'Editor'.

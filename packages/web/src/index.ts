@@ -303,7 +303,7 @@ function showCanvasPanel() {
 document.querySelectorAll('input[name="img-draw-mode"]').forEach(el => {
   el.addEventListener('change', (e) => {
     const mode = (e.target as HTMLInputElement).value as 'fill' | 'cover' | 'contain';
-    const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+    const delta = jianzi.selectionManager.selectedDeltaId ? jianzi.deltas.get(jianzi.selectionManager.selectedDeltaId) : null;
     // Use type check to avoid instanceof module mismatch issues
     if (delta && delta.type === 'image') {
       (delta as ImageDelta).drawMode = mode;
@@ -315,7 +315,7 @@ document.querySelectorAll('input[name="img-draw-mode"]').forEach(el => {
 // Border color change
 document.getElementById('img-border-color')?.addEventListener('input', (e) => {
   const color = (e.target as HTMLInputElement).value;
-  const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+  const delta = jianzi.selectionManager.selectedDeltaId ? jianzi.deltas.get(jianzi.selectionManager.selectedDeltaId) : null;
   if (delta && delta.type === 'image') {
     (delta as ImageDelta).borderColor = color;
     jianzi.refresh();
@@ -325,7 +325,7 @@ document.getElementById('img-border-color')?.addEventListener('input', (e) => {
 // Border width change
 document.getElementById('img-border-width')?.addEventListener('input', (e) => {
   const width = parseFloat((e.target as HTMLInputElement).value) || 0;
-  const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+  const delta = jianzi.selectionManager.selectedDeltaId ? jianzi.deltas.get(jianzi.selectionManager.selectedDeltaId) : null;
   if (delta && delta.type === 'image') {
     (delta as ImageDelta).borderWidth = width;
     jianzi.refresh();
@@ -340,7 +340,7 @@ document.getElementById('upload-image-link')?.addEventListener('click', () => {
 // Update panel whenever mouse is released (selection may have changed)
 document.addEventListener('mouseup', () => {
   requestAnimationFrame(() => {
-    const sel = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+    const sel = jianzi.selectionManager.selectedDeltaId ? jianzi.deltas.get(jianzi.selectionManager.selectedDeltaId) : null;
     if (sel && sel.type === 'image') {
       showImagePanel(sel as ImageDelta);
     } else {
@@ -364,8 +364,8 @@ function closeAllPalettes() {
 
 function updateFloatingToolbar() {
   if (!floatingToolbar) return;
-  const range = jianzi.selectionRange;
-  const delta = jianzi.selectedDeltaId ? jianzi.deltas.get(jianzi.selectedDeltaId) : null;
+  const range = jianzi.selectionManager.selectionRange;
+  const delta = jianzi.selectionManager.selectedDeltaId ? jianzi.deltas.get(jianzi.selectionManager.selectedDeltaId) : null;
 
   if (range && delta && delta.type === 'text' && Math.abs(range.start - range.end) > 0) {
     // Update font size
