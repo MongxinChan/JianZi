@@ -796,22 +796,26 @@ export class ImageDelta extends Delta {
         } else if (this.drawMode === 'cover') {
             // Crop: scale so image covers entire box
             const scale = Math.max(w / iw, h / ih);
-            const sw = w / scale;
-            const sh = h / scale;
-            const sx = (iw - sw) / 2;
-            const sy = (ih - sh) / 2;
+            const sw = w / scale; // Source width to crop
+            const sh = h / scale; // Source height to crop
+            const sx = (iw - sw) / 2; // Center horizontally on source
+            const sy = (ih - sh) / 2; // Center vertically on source
+
             ctx.beginPath();
             ctx.rect(x, y, w, h);
             ctx.clip();
+            // dx, dy should just be x, y. dw, dh should be w, h.
             ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
         } else {
             // contain: letterbox, preserve aspect ratio
             const scale = Math.min(w / iw, h / ih);
-            const dw = iw * scale;
-            const dh = ih * scale;
-            const dx = x + (w - dw) / 2;
-            const dy = y + (h - dh) / 2;
-            ctx.drawImage(img, dx, dy, dw, dh);
+            const dw = iw * scale; // Destination width
+            const dh = ih * scale; // Destination height
+            const dx = x + (w - dw) / 2; // Center horizontally
+            const dy = y + (h - dh) / 2; // Center vertically
+
+            // For contain, we don't need to crop the source, just draw it at the calculated dest rect
+            ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
         }
 
         ctx.restore();
