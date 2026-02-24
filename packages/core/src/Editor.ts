@@ -10,6 +10,7 @@ import { SelectState } from './state/SelectState';
 import { HistoryManager } from './history/HistoryManager';
 import { AddOp, UpdateOp } from './history/Operation';
 import { ViewportManager } from './core/ViewportManager';
+import { InputManager } from './core/InputManager';
 
 /**
  * 编辑器交互类：负责处理用户输入、状态管理与渲染同步
@@ -18,11 +19,11 @@ export class Editor {
   private layerManager: LayerManager;
   public deltas: DeltaSet;
   private options: JianZiOptions;
-  private inputElement: HTMLTextAreaElement | null = null;
+  public inputManager: InputManager;
   private caretElement: HTMLDivElement | null = null;
   public selectedDeltaId: string | null = null;
   public selectionRange: { start: number; end: number } | null = null;
-  private currentFont: string = "'STKaiti', 'KaiTi', serif";
+  public currentFont: string = "'STKaiti', 'KaiTi', serif";
   public toolMode: 'select' | 'hand' = 'select';
   public viewportManager: ViewportManager;
 
@@ -39,6 +40,7 @@ export class Editor {
     this.layerManager = new LayerManager(options);
     this.history = new HistoryManager(this);
     this.viewportManager = new ViewportManager(options);
+    this.inputManager = new InputManager(this);
 
     // Initialize states
     this.states = {
@@ -46,7 +48,7 @@ export class Editor {
       'hand': new GrabState(this)
     };
 
-    this.initInputBridge();
+    this.initCaretAndEvents();
     this.setTool('select');
   }
 
@@ -55,7 +57,7 @@ export class Editor {
   }
 
   public getInputElement() {
-    return this.inputElement;
+    return this.inputManager.inputElement;
   }
 
   public setTool(mode: 'select' | 'hand'): void {
@@ -79,8 +81,8 @@ export class Editor {
   public clear(): void {
     this.deltas.clear();
     this.selectionRange = null;
-    if (this.inputElement) {
-      this.inputElement.value = '';
+    if (this.inputManager) {
+      this.inputManager.inputElement.value = '';
     }
     this.history.clear();
     this.refresh();
@@ -244,20 +246,7 @@ export class Editor {
     return this.options;
   }
 
-  private initInputBridge(): void {
-    const input = document.createElement('textarea');
-    Object.assign(input.style, {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      opacity: '0',
-      pointerEvents: 'none',
-      zIndex: '-1',
-    });
-
-    document.body.appendChild(input);
-    this.inputElement = input;
-
+  private initCaretAndEvents(): void {
     const caret = document.createElement('div');
     Object.assign(caret.style, {
       position: 'absolute',
@@ -277,66 +266,7 @@ export class Editor {
       document.head.appendChild(style);
     }
 
-    // Input handling
-    let isComposing = false;
-
-    input.addEventListener('compositionstart', () => {
-      isComposing = true;
-    });
-
-    input.addEventListener('compositionend', (e) => {
-      isComposing = false;
-      // Trigger final update
-      handleInput((e.target as HTMLTextAreaElement).value);
-    });
-
-    input.addEventListener('input', (e) => {
-      if (!isComposing) {
-        handleInput((e.target as HTMLTextAreaElement).value);
-      }
-    });
-
-    document.addEventListener('selectionchange', () => {
-      if (document.activeElement === input && this.selectedDeltaId && this.toolMode === 'select') {
-        const start = input.selectionStart;
-        const end = input.selectionEnd;
-        if (!this.selectionRange || this.selectionRange.start !== start || this.selectionRange.end !== end) {
-          this.selectionRange = { start, end };
-          this.refresh();
-        }
-      }
-    });
-
-    const handleInput = (text: string) => {
-      if (this.selectedDeltaId) {
-        const delta = this.deltas.get(this.selectedDeltaId);
-        if (delta instanceof TextDelta) {
-          delta.content = text;
-          // Width is updated in draw() via measure(), but we force refresh to trigger it
-          this.refresh();
-        }
-      } else {
-        // If no selection, maybe creating a new text block?
-        // For now, let's keep the "Main Text" behavior if nothing selected but canvas is empty
-        if (this.deltas.getAll().length === 0) {
-          const textDelta = new TextDelta({
-            id: 'main-text',
-            x: this.options.padding || 60,
-            y: this.options.padding || 60,
-            width: 500,
-            height: 500,
-            type: 'text' as any,
-            content: text,
-            fontSize: 28,
-            fontFamily: this.currentFont
-          });
-          this.deltas.add(textDelta);
-          this.selectedDeltaId = textDelta.id; // Auto select
-          this.refresh();
-        }
-      }
-    };
-
+    // Caret and Keyboard shortcuts for Undo/Redo & Nudging
     const eventBase = (this.options.eventTarget as HTMLElement | Window | Document) || this.options.container;
 
     // Mouse Interaction Delegated to activeState
@@ -362,7 +292,7 @@ export class Editor {
     window.addEventListener('keydown', (e) => {
       // Identify if the keydown happened while our hidden bridge textarea has focus
       const target = e.target as HTMLElement;
-      const isOurTextarea = target === this.inputElement;
+      const isOurTextarea = target === this.inputManager.inputElement;
 
       // Ignore if user is typing in generic page inputs
       if (target && target.tagName === 'INPUT') {
@@ -475,8 +405,8 @@ export class Editor {
   }
 
   public setValue(val: string): void {
-    if (this.inputElement) {
-      this.inputElement.value = val;
+    if (this.inputManager) {
+      this.inputManager.setValue(val);
       // Trigger input event logic manually
       this.deltas.clear();
       this.deltas.add(new TextDelta({
@@ -557,6 +487,7 @@ export class Editor {
    * @param content 初始文本内容
    * @param x 初始X位置
    * @param y 初始Y位置
+   * @param zIndex 可选的Z轴层级
    */
   public addText(content?: string, x?: number, y?: number): void {
     const padding = this.options.padding || 60;
@@ -579,9 +510,9 @@ export class Editor {
     this.selectedDeltaId = textDelta.id;
     this.selectionRange = null;
     // Sync input bridge so user can type immediately
-    if (this.inputElement) {
-      this.inputElement.value = textDelta.content;
-      setTimeout(() => this.inputElement?.focus(), 0);
+    if (this.inputManager) {
+      this.inputManager.setValue(textDelta.content);
+      setTimeout(() => this.inputManager.inputElement.focus(), 0);
     }
     this.refresh();
   }
