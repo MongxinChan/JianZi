@@ -59,7 +59,7 @@ export class GrabState extends BaseToolState {
         this.isPanning = true;
         this.startPan = { x: e.clientX, y: e.clientY };
 
-        const currentTransform = this.editor.getViewportTransform();
+        const currentTransform = this.editor.viewportManager.getTransform();
         this.startScroll = { left: currentTransform.x, top: currentTransform.y };
 
         this.bindGlobalEvents();
@@ -90,15 +90,15 @@ export class GrabState extends BaseToolState {
     private scheduleTranslate() {
         if (this.animationFrameId === null) {
             this.animationFrameId = requestAnimationFrame(() => {
-                this.editor.setViewportTransform(this.targetX, this.targetY);
+                this.editor.viewportManager.setTransform(this.targetX, this.targetY);
                 this.animationFrameId = null;
             });
         }
     }
 
     private translateImmediately(dx: number, dy: number) {
-        const currentTransform = this.editor.getViewportTransform();
-        this.editor.setViewportTransform(
+        const currentTransform = this.editor.viewportManager.getTransform();
+        this.editor.viewportManager.setTransform(
             currentTransform.x + dx,
             currentTransform.y + dy
         );

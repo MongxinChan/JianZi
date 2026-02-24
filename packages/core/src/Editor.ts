@@ -9,6 +9,7 @@ import { GrabState } from './state/GrabState';
 import { SelectState } from './state/SelectState';
 import { HistoryManager } from './history/HistoryManager';
 import { AddOp, UpdateOp } from './history/Operation';
+import { ViewportManager } from './core/ViewportManager';
 
 /**
  * 编辑器交互类：负责处理用户输入、状态管理与渲染同步
@@ -23,8 +24,7 @@ export class Editor {
   public selectionRange: { start: number; end: number } | null = null;
   private currentFont: string = "'STKaiti', 'KaiTi', serif";
   public toolMode: 'select' | 'hand' = 'select';
-  // [Infinite Panning]
-  private viewportTransform = { x: 0, y: 0, scale: 1 };
+  public viewportManager: ViewportManager;
 
   // States
   private states: Record<string, ToolState> = {};
@@ -38,6 +38,7 @@ export class Editor {
     this.deltas = new DeltaSet();
     this.layerManager = new LayerManager(options);
     this.history = new HistoryManager(this);
+    this.viewportManager = new ViewportManager(options);
 
     // Initialize states
     this.states = {
@@ -49,36 +50,12 @@ export class Editor {
     this.setTool('select');
   }
 
-  public getViewportTransform() {
-    return this.viewportTransform;
-  }
-
-  public setViewportTransform(x: number, y: number, scale?: number) {
-    this.viewportTransform.x = x;
-    this.viewportTransform.y = y;
-    if (scale !== undefined) this.viewportTransform.scale = scale;
-    this.updateViewportTransform();
-  }
-
   public getLayerManager() {
     return this.layerManager;
   }
 
   public getInputElement() {
     return this.inputElement;
-  }
-
-  // [Infinite Panning]
-  private updateViewportTransform(): void {
-    const { x, y, scale } = this.viewportTransform;
-    // Apply transform to parent (.canvas-container) if eventTarget is used, 
-    // to preserve the .canvas-container's role as the moving wrapper.
-    const target = (this.options.eventTarget && this.options.container.parentElement)
-      ? this.options.container.parentElement
-      : this.options.container;
-
-    target.style.transform =
-      `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`;
   }
 
   public setTool(mode: 'select' | 'hand'): void {
