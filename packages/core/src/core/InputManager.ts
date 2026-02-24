@@ -45,11 +45,11 @@ export class InputManager {
         // selectionchange is on document and checks activeElement
         // We keep it here since it relates to the inputElement's native selection
         document.addEventListener('selectionchange', () => {
-            if (document.activeElement === this.inputElement && this.editor.selectedDeltaId && this.editor.toolMode === 'select') {
+            if (document.activeElement === this.inputElement && this.editor.selectionManager.selectedDeltaId && this.editor.toolMode === 'select') {
                 const start = this.inputElement.selectionStart;
                 const end = this.inputElement.selectionEnd;
-                if (!this.editor.selectionRange || this.editor.selectionRange.start !== start || this.editor.selectionRange.end !== end) {
-                    this.editor.selectionRange = { start, end };
+                if (!this.editor.selectionManager.selectionRange || this.editor.selectionManager.selectionRange.start !== start || this.editor.selectionManager.selectionRange.end !== end) {
+                    this.editor.selectionManager.selectionRange = { start, end };
                     this.editor.refresh();
                 }
             }
@@ -57,8 +57,8 @@ export class InputManager {
     }
 
     private handleInput(text: string) {
-        if (this.editor.selectedDeltaId) {
-            const delta = this.editor.deltas.get(this.editor.selectedDeltaId);
+        if (this.editor.selectionManager.selectedDeltaId) {
+            const delta = this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId);
             if (delta instanceof TextDelta) {
                 delta.content = text;
                 this.editor.refresh();
@@ -79,7 +79,7 @@ export class InputManager {
                     fontFamily: this.editor.currentFont
                 });
                 this.editor.deltas.add(textDelta);
-                this.editor.selectedDeltaId = textDelta.id; // Auto select
+                this.editor.selectionManager.selectedDeltaId = textDelta.id; // Auto select
                 this.editor.refresh();
             }
         }

@@ -30,8 +30,8 @@ export class SelectState extends BaseToolState {
 
     onDisable(): void {
         this.resetState();
-        this.editor.selectedDeltaId = null;
-        this.editor.selectionRange = null;
+        this.editor.selectionManager.selectedDeltaId = null;
+        this.editor.selectionManager.selectionRange = null;
         this.editor.refresh();
     }
 
@@ -48,7 +48,7 @@ export class SelectState extends BaseToolState {
     private getMousePos(e: MouseEvent) {
         const container = this.editor.getOptions().container;
         const rect = container.getBoundingClientRect();
-        const transform = this.editor.getViewportTransform();
+        const transform = this.editor.viewportManager.getTransform();
         const scale = transform.scale;
         return {
             x: (e.clientX - rect.left) / scale,
@@ -61,12 +61,12 @@ export class SelectState extends BaseToolState {
         const { x, y } = pos;
 
         // 1) Check if we clicked on a resize handle of the currently selected delta
-        if (this.editor.selectedDeltaId) {
+        if (this.editor.selectionManager.selectedDeltaId) {
             const handle = this.editor.getLayerManager().interactionLayer.hitTestHandle(x, y);
             if (handle) {
                 this.isResizing = true;
                 this.activeHandle = handle;
-                const delta = this.editor.deltas.get(this.editor.selectedDeltaId);
+                const delta = this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId);
                 if (delta) {
                     this.resizeStartRect = {
                         x: delta.x, y: delta.y, width: delta.width, height: delta.height,
@@ -82,7 +82,7 @@ export class SelectState extends BaseToolState {
 
         // 2) Check Text Selection (Click on selected text)
         const hitDelta = this.editor.deltas.hitTest(x, y);
-        if (hitDelta && this.editor.selectedDeltaId === hitDelta.id && hitDelta instanceof TextDelta) {
+        if (hitDelta && this.editor.selectionManager.selectedDeltaId === hitDelta.id && hitDelta instanceof TextDelta) {
             // @ts-ignore
             const ctx = this.editor.getLayerManager().canvasLayer.ctx;
             const mode = this.editor.getOptions().mode || 'vertical';
@@ -93,7 +93,7 @@ export class SelectState extends BaseToolState {
 
             if (idx !== -1) {
                 this.isSelectingText = true;
-                this.editor.selectionRange = { start: idx, end: idx };
+                this.editor.selectionManager.selectionRange = { start: idx, end: idx };
 
                 const inputElement = this.editor.getInputElement();
                 if (inputElement) {
@@ -114,11 +114,11 @@ export class SelectState extends BaseToolState {
 
         if (hitDelta) {
             hitDelta.selected = true;
-            this.editor.selectedDeltaId = hitDelta.id;
+            this.editor.selectionManager.selectedDeltaId = hitDelta.id;
             this.isDragging = true;
             this.lastMousePos = { x, y };
             this.dragStartRect = { x: hitDelta.x, y: hitDelta.y };
-            this.editor.selectionRange = null; // Reset text selection on new delta select
+            this.editor.selectionManager.selectionRange = null; // Reset text selection on new delta select
 
             // Focus input if text (to allow editing)
             if (hitDelta.type === 'text') {
@@ -130,8 +130,8 @@ export class SelectState extends BaseToolState {
             }
             this.bindGlobalEvents();
         } else {
-            this.editor.selectedDeltaId = null;
-            this.editor.selectionRange = null;
+            this.editor.selectionManager.selectedDeltaId = null;
+            this.editor.selectionManager.selectionRange = null;
             setTimeout(() => this.editor.getInputElement()?.focus(), 0);
         }
 
@@ -165,10 +165,10 @@ export class SelectState extends BaseToolState {
         const { x, y } = this.getMousePos(e);
 
         // --- Resize mode ---
-        if (this.isResizing && this.editor.selectedDeltaId && this.resizeStartRect && this.resizeStartMouse && this.activeHandle) {
+        if (this.isResizing && this.editor.selectionManager.selectedDeltaId && this.resizeStartRect && this.resizeStartMouse && this.activeHandle) {
             const dx = x - this.resizeStartMouse.x;
             const dy = y - this.resizeStartMouse.y;
-            const delta = this.editor.deltas.get(this.editor.selectedDeltaId);
+            const delta = this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId);
             if (!delta) return;
 
             const r = this.resizeStartRect;
@@ -255,8 +255,8 @@ export class SelectState extends BaseToolState {
         }
 
         // --- Text Selection mode ---
-        if (this.isSelectingText && this.editor.selectedDeltaId && this.editor.selectionRange) {
-            const delta = this.editor.deltas.get(this.editor.selectedDeltaId);
+        if (this.isSelectingText && this.editor.selectionManager.selectedDeltaId && this.editor.selectionManager.selectionRange) {
+            const delta = this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId);
             if (delta instanceof TextDelta) {
                 // @ts-ignore
                 const ctx = this.editor.getLayerManager().canvasLayer.ctx;
@@ -266,13 +266,13 @@ export class SelectState extends BaseToolState {
 
                 const idx = delta.getCharIndexAt(ctx, x, y, mode, width, height);
                 if (idx !== -1) {
-                    this.editor.selectionRange.end = idx;
+                    this.editor.selectionManager.selectionRange.end = idx;
 
                     const inputElement = this.editor.getInputElement();
                     if (inputElement) {
-                        const start = Math.min(this.editor.selectionRange.start, this.editor.selectionRange.end);
-                        const end = Math.max(this.editor.selectionRange.start, this.editor.selectionRange.end);
-                        inputElement.setSelectionRange(start, end, this.editor.selectionRange.start > this.editor.selectionRange.end ? "backward" : "forward");
+                        const start = Math.min(this.editor.selectionManager.selectionRange.start, this.editor.selectionManager.selectionRange.end);
+                        const end = Math.max(this.editor.selectionManager.selectionRange.start, this.editor.selectionManager.selectionRange.end);
+                        inputElement.setSelectionRange(start, end, this.editor.selectionManager.selectionRange.start > this.editor.selectionManager.selectionRange.end ? "backward" : "forward");
                     }
 
                     this.editor.refresh();
@@ -282,10 +282,10 @@ export class SelectState extends BaseToolState {
         }
 
         // --- Drag mode ---
-        if (this.isDragging && this.editor.selectedDeltaId) {
+        if (this.isDragging && this.editor.selectionManager.selectedDeltaId) {
             const dx = x - this.lastMousePos.x;
             const dy = y - this.lastMousePos.y;
-            const delta = this.editor.deltas.get(this.editor.selectedDeltaId);
+            const delta = this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId);
 
             if (delta) {
                 delta.move(dx, dy);
@@ -298,7 +298,7 @@ export class SelectState extends BaseToolState {
     }
 
     private onMouseUpGlobal(e: MouseEvent): void {
-        const delta = this.editor.selectedDeltaId ? this.editor.deltas.get(this.editor.selectedDeltaId) : null;
+        const delta = this.editor.selectionManager.selectedDeltaId ? this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId) : null;
 
         // Record history for Drag
         if (this.isDragging && delta && this.dragStartRect) {

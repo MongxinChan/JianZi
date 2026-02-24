@@ -81,14 +81,14 @@ export class AddOp implements Operation {
 
     undo(editor: Editor): void {
         editor.deltas.remove(this.delta.id);
-        editor.selectedDeltaId = null;
+        editor.selectionManager.selectedDeltaId = null;
         editor.refresh();
     }
 
     redo(editor: Editor): void {
         const cloned = cloneDelta(this.delta);
         editor.deltas.add(cloned);
-        editor.selectedDeltaId = cloned.id;
+        editor.selectionManager.selectedDeltaId = cloned.id;
         cloned.selected = true;
         editor.refresh();
     }
@@ -107,14 +107,14 @@ export class RemoveOp implements Operation {
     undo(editor: Editor): void {
         const cloned = cloneDelta(this.delta);
         editor.deltas.add(cloned);
-        editor.selectedDeltaId = cloned.id;
+        editor.selectionManager.selectedDeltaId = cloned.id;
         cloned.selected = true;
         editor.refresh();
     }
 
     redo(editor: Editor): void {
         editor.deltas.remove(this.delta.id);
-        editor.selectedDeltaId = null;
+        editor.selectionManager.selectedDeltaId = null;
         editor.refresh();
     }
 }

@@ -11,6 +11,7 @@ import { HistoryManager } from './history/HistoryManager';
 import { AddOp, UpdateOp } from './history/Operation';
 import { ViewportManager } from './core/ViewportManager';
 import { InputManager } from './core/InputManager';
+import { SelectionManager } from './core/SelectionManager';
 
 /**
  * 编辑器交互类：负责处理用户输入、状态管理与渲染同步
@@ -20,9 +21,7 @@ export class Editor {
   public deltas: DeltaSet;
   private options: JianZiOptions;
   public inputManager: InputManager;
-  private caretElement: HTMLDivElement | null = null;
-  public selectedDeltaId: string | null = null;
-  public selectionRange: { start: number; end: number } | null = null;
+  public selectionManager: SelectionManager;
   public currentFont: string = "'STKaiti', 'KaiTi', serif";
   public toolMode: 'select' | 'hand' = 'select';
   public viewportManager: ViewportManager;
@@ -40,6 +39,7 @@ export class Editor {
     this.layerManager = new LayerManager(options);
     this.history = new HistoryManager(this);
     this.viewportManager = new ViewportManager(options);
+    this.selectionManager = new SelectionManager(this);
     this.inputManager = new InputManager(this);
 
     // Initialize states
@@ -48,7 +48,7 @@ export class Editor {
       'hand': new GrabState(this)
     };
 
-    this.initCaretAndEvents();
+    this.bindEvents();
     this.setTool('select');
   }
 
@@ -80,7 +80,8 @@ export class Editor {
    */
   public clear(): void {
     this.deltas.clear();
-    this.selectionRange = null;
+    this.selectionManager.selectionRange = null;
+    this.selectionManager.selectedDeltaId = null;
     if (this.inputManager) {
       this.inputManager.inputElement.value = '';
     }
@@ -175,8 +176,8 @@ export class Editor {
 
       // Clear existing content
       this.deltas.clear();
-      this.selectedDeltaId = null;
-      this.selectionRange = null;
+      this.selectionManager.selectedDeltaId = null;
+      this.selectionManager.selectionRange = null;
       this.history.clear();
 
       // Rebuild deltas
@@ -246,27 +247,10 @@ export class Editor {
     return this.options;
   }
 
-  private initCaretAndEvents(): void {
-    const caret = document.createElement('div');
-    Object.assign(caret.style, {
-      position: 'absolute',
-      pointerEvents: 'none',
-      backgroundColor: '#1890ff',
-      zIndex: '20',
-      display: 'none',
-      animation: 'caret-blink 1s step-end infinite'
-    });
-    this.options.container.appendChild(caret);
-    this.caretElement = caret;
+  // Caret and Keyboard shortcuts for Undo/Redo & Nudging
+  // TODO: Move DOM events to EventDispatcher
 
-    if (!document.getElementById('caret-blink-style')) {
-      const style = document.createElement('style');
-      style.id = 'caret-blink-style';
-      style.innerHTML = `@keyframes caret-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }`;
-      document.head.appendChild(style);
-    }
-
-    // Caret and Keyboard shortcuts for Undo/Redo & Nudging
+  private bindEvents(): void {
     const eventBase = (this.options.eventTarget as HTMLElement | Window | Document) || this.options.container;
 
     // Mouse Interaction Delegated to activeState
@@ -301,7 +285,7 @@ export class Editor {
 
       if (target && target.tagName === 'TEXTAREA') {
         // If it's our hidden textarea, only ignore arrow keys if the user is actively editing text inside it
-        if (isOurTextarea && this.selectionRange !== null) {
+        if (isOurTextarea && this.selectionManager.selectionRange !== null) {
           return;
         }
         // If it's some other random textarea on the page, ignore it entirely
@@ -311,8 +295,8 @@ export class Editor {
       }
 
       // Arrow keys to nudge selection
-      if (this.selectedDeltaId) {
-        const delta = this.deltas.get(this.selectedDeltaId);
+      if (this.selectionManager.selectedDeltaId) {
+        const delta = this.deltas.get(this.selectionManager.selectedDeltaId);
         if (delta) {
           const step = e.shiftKey ? 10 : 1;
           let moved = false;
@@ -362,46 +346,7 @@ export class Editor {
     this.layerManager.render(this.deltas, mode);
     // Draw interaction layer (Selection box)
     this.layerManager.interactionLayer.clear();
-
-    if (this.caretElement) {
-      this.caretElement.style.display = 'none';
-    }
-
-    const selectedDelta = this.selectedDeltaId ? this.deltas.get(this.selectedDeltaId) : null;
-    if (selectedDelta) {
-      // @ts-ignore
-      this.layerManager.interactionLayer.drawSelection(selectedDelta.getRect());
-
-      // Draw text selection
-      if (selectedDelta instanceof TextDelta && this.selectionRange) {
-        const s = Math.min(this.selectionRange.start, this.selectionRange.end);
-        const e = Math.max(this.selectionRange.start, this.selectionRange.end);
-
-        if (s === e) {
-          // @ts-ignore
-          const caretRect = selectedDelta.getCaretRect(this.layerManager.canvasLayer.ctx, s, mode, this.layerManager.canvasLayer.width, this.layerManager.canvasLayer.height);
-          if (caretRect && this.caretElement && this.toolMode === 'select') {
-            this.caretElement.style.display = 'block';
-            this.caretElement.style.left = `${caretRect.x}px`;
-            this.caretElement.style.top = `${caretRect.y}px`;
-            this.caretElement.style.width = `${caretRect.width}px`;
-            this.caretElement.style.height = `${caretRect.height}px`;
-          }
-        } else {
-          // Inclusive - Inclusive (Character Box Selection)
-          const rects = selectedDelta.getRectsForRange(
-            // @ts-ignore
-            this.layerManager.canvasLayer.ctx,
-            s,
-            e + 1,
-            mode,
-            this.layerManager.canvasLayer.width,
-            this.layerManager.canvasLayer.height
-          );
-          this.layerManager.interactionLayer.drawTextSelection(rects);
-        }
-      }
-    }
+    this.selectionManager.drawSelection();
   }
 
   public setValue(val: string): void {
@@ -440,46 +385,7 @@ export class Editor {
    * 设置字体 (支持选区操作)
    */
   public setFont(fontFamily: string): void {
-    this.currentFont = fontFamily;
-
-    if (this.selectedDeltaId) {
-      const delta = this.deltas.get(this.selectedDeltaId);
-      if (delta instanceof TextDelta) {
-        // Deep copy old state of text delta manually since it has nested objects
-        const oldState = {
-          fontFamily: delta.fontFamily,
-          fragments: JSON.parse(JSON.stringify(delta.fragments))
-        } as Partial<Delta>;
-
-        // Mode 1: Text Editing (Range Selection)
-        if (this.selectionRange) {
-          const start = Math.min(this.selectionRange.start, this.selectionRange.end);
-          const end = Math.max(this.selectionRange.start, this.selectionRange.end);
-
-          if (start < end) {
-            delta.applyStyle(start, end, { fontFamily });
-          } else {
-            // Cursor mode: Insert style? 
-            // For now just update currentFont implies next char will use it (if logic in handleInput uses currentFont)
-          }
-        }
-        // Mode 2: Object Selection (No active text editing range)
-        else {
-          // Apply to whole text
-          delta.applyStyle(0, delta.content.length, { fontFamily });
-          // Also update fallback
-          delta.fontFamily = fontFamily;
-        }
-
-        const newState = {
-          fontFamily: delta.fontFamily,
-          fragments: JSON.parse(JSON.stringify(delta.fragments))
-        } as Partial<Delta>;
-        this.history.push([new UpdateOp(delta.id, oldState, newState)]);
-      }
-    }
-
-    this.refresh();
+    this.selectionManager.setFont(fontFamily);
   }
 
   /**
@@ -507,8 +413,8 @@ export class Editor {
     // Select the new text box
     this.deltas.forEach(d => d.selected = false);
     textDelta.selected = true;
-    this.selectedDeltaId = textDelta.id;
-    this.selectionRange = null;
+    this.selectionManager.selectedDeltaId = textDelta.id;
+    this.selectionManager.selectionRange = null;
     // Sync input bridge so user can type immediately
     if (this.inputManager) {
       this.inputManager.setValue(textDelta.content);
@@ -541,48 +447,16 @@ export class Editor {
     );
     this.deltas.add(imgDelta);
     this.history.push([new AddOp(imgDelta)]);
-    this.selectedDeltaId = imgDelta.id;
+    this.selectionManager.selectedDeltaId = imgDelta.id;
     imgDelta.selected = true;
     this.refresh();
   }
 
   public applyStyleToSelection(style: Partial<CharStyle>): void {
-    if (this.selectedDeltaId && this.selectionRange) {
-      const delta = this.deltas.get(this.selectedDeltaId);
-      if (delta instanceof TextDelta) {
-        const { start, end } = this.selectionRange;
-        // Selection is inclusive of character boxes.
-        // applyStyleToContent expects exclusive end index for slice logic.
-        const s = Math.min(start, end);
-        const e = Math.max(start, end) + 1;
-
-        const oldState = { fragments: JSON.parse(JSON.stringify(delta.fragments)) } as Partial<Delta>;
-
-        delta.fragments = applyStyleToContent(
-          delta.fragments, s, e, style
-        );
-
-        const newState = { fragments: JSON.parse(JSON.stringify(delta.fragments)) } as Partial<Delta>;
-        this.history.push([new UpdateOp(delta.id, oldState, newState)]);
-
-        this.refresh();
-      }
-    }
+    this.selectionManager.applyStyleToSelection(style);
   }
 
-
   public getSelectionStyle(): Partial<CharStyle> | null {
-    if (this.selectedDeltaId && this.selectionRange) {
-      const delta = this.deltas.get(this.selectedDeltaId);
-      if (delta instanceof TextDelta) {
-        const start = Math.min(this.selectionRange.start, this.selectionRange.end);
-        const end = Math.max(this.selectionRange.start, this.selectionRange.end);
-        if (start === end) {
-          return delta.getStyleAt(start);
-        }
-        return delta.getCommonStyle(start, end);
-      }
-    }
-    return null;
+    return this.selectionManager.getSelectionStyle();
   }
 }
