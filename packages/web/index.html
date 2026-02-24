@@ -4,6 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>笺字 | JianZi</title>
+    <!-- Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Long+Cang&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;700&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&family=Zhi+Mang+Xing&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" />
 </head>
 
 <body>
@@ -191,13 +198,40 @@
                         <div class="prop-section">
                             <div class="prop-section-title">字体</div>
                             <select id="font-family" class="prop-select">
-                                <option value="'STKaiti', 'KaiTi', serif">楷体 KaiTi</option>
-                                <option value="'STSong', 'SimSun', 'Songti SC', serif">宋体 / 明体 SongTi</option>
-                                <option value="'STFangsong', 'FangSong', 'FangSong_GB2312', serif">仿宋 FangSong</option>
-                                <option value="'STLiti', 'LiSu', 'Weibei SC', serif">隶书 LiSu</option>
-                                <option value="'STXingkai', 'Xingkai SC', 'HuaWenXingKai', serif">行体 XingKai</option>
-                                <option value="'Inter', 'Segoe UI', sans-serif">现代无衬线 Inter</option>
-                                <option value="'Georgia', 'Palatino', serif">经典衬线 Georgia</option>
+                                <optgroup label="基础字体 (Base)">
+                                    <option value="'STKaiti', 'KaiTi', serif">楷体 KaiTi</option>
+                                    <option value="'STSong', 'SimSun', 'Songti SC', serif">宋体 / 明体 SongTi</option>
+                                    <option value="'STFangsong', 'FangSong', 'FangSong_GB2312', serif">仿宋 FangSong
+                                    </option>
+                                    <option value="'Microsoft YaHei', 'PingFang SC', sans-serif">黑体 / 雅黑 YaHei</option>
+                                    <option value="'Inter', 'Segoe UI', sans-serif">现代无衬线 Inter</option>
+                                    <option value="'Georgia', 'Palatino', serif">经典衬线 Georgia</option>
+                                </optgroup>
+                                <optgroup label="现代开源 (Web Fonts)">
+                                    <option value="'LXGW WenKai', 'STKaiti', serif">霞鹜文楷 WenKai</option>
+                                    <option value="'Noto Serif SC', serif">思源宋体 Noto Serif</option>
+                                    <option value="'Noto Sans SC', sans-serif">思源黑体 Noto Sans</option>
+                                </optgroup>
+                                <optgroup label="书法与名家 (Calligraphy)">
+                                    <option value="'STXingkai', 'Xingkai SC', 'HuaWenXingKai', serif">行楷 XingKai
+                                    </option>
+                                    <option value="'STLiti', 'LiSu', 'Weibei SC', serif">隶书 LiSu</option>
+                                    <option value="'STXinwei', 'XinWei', serif">新魏 XinWei</option>
+                                    <option value="'FZShuTi', 'Shuti', serif">舒体 ShuTi</option>
+                                    <option value="'FZYaoTi', 'Yaoti', serif">姚体 YaoTi</option>
+                                    <option value="'Ma Shan Zheng', cursive">毛笔楷书 Ma Shan Zheng</option>
+                                    <option value="'Zhi Mang Xing', cursive">毛笔行书 Zhi Mang Xing</option>
+                                    <option value="'Long Cang', cursive">毛笔草书 Long Cang</option>
+                                </optgroup>
+                                <optgroup label="艺术与手写 (Display & Script)">
+                                    <option value="'YouYuan', 'Yuanti SC', sans-serif">幼圆 YouYuan</option>
+                                    <option value="'HanziPen SC', 'Wawati SC', cursive">手札 / 娃娃体 HandPen</option>
+                                    <option value="'ZCOOL XiaoWei', serif">站酷小薇 XiaoWei</option>
+                                    <option value="'ZCOOL QingKe HuangYou', cursive">站酷黄油 HuangYou</option>
+                                    <option value="'STHupo', 'Hupo', sans-serif">琥珀 Hupo</option>
+                                    <option value="'STCaiyun', 'Caiyun', sans-serif">彩云 CaiYun</option>
+                                    <option value="'STXihei', 'Xihei', sans-serif">细黑 XiHei</option>
+                                </optgroup>
                             </select>
                         </div>
 
