@@ -796,3 +796,89 @@ svg {
 .ft-swatch-clear:hover {
   border-color: #999 !important;
 }
+
+/* ============================================================
+   Responsive (Mobile)
+   ============================================================ */
+@media screen and (max-width: 768px) {
+
+  /* 1. Header */
+  .editor-header {
+    height: auto;
+    min-height: var(--header-h);
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .header-left,
+  .header-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .brand {
+    font-size: 14px;
+  }
+
+  .tool-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .github-link {
+    display: none;
+  }
+
+  /* 2. Right Properties Panel - Bottom Drawer */
+  .right-properties {
+    width: 100%;
+    height: 50vh;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .right-properties.open {
+    transform: translateY(0);
+  }
+
+  .toggle-right-btn {
+    left: 50%;
+    top: -36px;
+    margin-left: -12px;
+    transform: rotate(90deg);
+  }
+
+  /* 3. Dropdowns */
+  .dropdown-menu {
+    position: fixed;
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    min-width: unset;
+    z-index: 2000;
+  }
+
+  .dropdown-menu.dropdown-menu-right {
+    left: 10px;
+    right: 10px;
+  }
+
+  /* 4. Ensure viewport doesn't scroll natively for touch operations */
+  .viewport {
+    touch-action: none;
+  }
+
+  /* 5. Floating text toolbar optimizations */
+  .floating-toolbar {
+    flex-wrap: wrap;
+    max-width: 90vw;
+  }
+}
