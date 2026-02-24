@@ -381,8 +381,61 @@ export class Editor {
       if (this.activeState) this.activeState.onWheel(e as WheelEvent);
     }) as EventListener, { passive: false });
 
-    // Keyboard shortcuts for Undo/Redo
+    // Keyboard shortcuts for Undo/Redo & Nudging
     window.addEventListener('keydown', (e) => {
+      // Identify if the keydown happened while our hidden bridge textarea has focus
+      const target = e.target as HTMLElement;
+      const isOurTextarea = target === this.inputElement;
+
+      // Ignore if user is typing in generic page inputs
+      if (target && target.tagName === 'INPUT') {
+        return;
+      }
+
+      if (target && target.tagName === 'TEXTAREA') {
+        // If it's our hidden textarea, only ignore arrow keys if the user is actively editing text inside it
+        if (isOurTextarea && this.selectionRange !== null) {
+          return;
+        }
+        // If it's some other random textarea on the page, ignore it entirely
+        if (!isOurTextarea) {
+          return;
+        }
+      }
+
+      // Arrow keys to nudge selection
+      if (this.selectedDeltaId) {
+        const delta = this.deltas.get(this.selectedDeltaId);
+        if (delta) {
+          const step = e.shiftKey ? 10 : 1;
+          let moved = false;
+          switch (e.key) {
+            case 'ArrowUp':
+              delta.y -= step;
+              moved = true;
+              break;
+            case 'ArrowDown':
+              delta.y += step;
+              moved = true;
+              break;
+            case 'ArrowLeft':
+              delta.x -= step;
+              moved = true;
+              break;
+            case 'ArrowRight':
+              delta.x += step;
+              moved = true;
+              break;
+          }
+          if (moved) {
+            this.refresh();
+            // Optional: push to history (debounced or on keyup ideally, but fine for now if omitted for small nudges)
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
         if (e.shiftKey) {
           this.redo();
