@@ -211,31 +211,35 @@ export class SelectState extends BaseToolState {
                     break;
             }
 
-            // For ImageDelta: lock aspect ratio
+            // For ImageDelta: lock aspect ratio only on corner handles by default
             if (delta instanceof ImageDelta) {
-                const aspect = r.width / r.height;
-                if (this.activeHandle === 'br' || this.activeHandle === 'tl') {
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        newH = newW / aspect;
-                    } else {
-                        newW = newH * aspect;
-                    }
-                } else {
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        newH = newW / aspect;
-                    } else {
-                        newW = newH * aspect;
-                    }
-                }
+                const isEdgeHandle = this.activeHandle === 'mr' || this.activeHandle === 'ml' || this.activeHandle === 'mt' || this.activeHandle === 'mb';
 
-                // Recalculate position for TL/BL/TR handles based on locked ratio
-                if (this.activeHandle === 'tl') {
-                    newX = r.x + r.width - newW;
-                    newY = r.y + r.height - newH;
-                } else if (this.activeHandle === 'bl') {
-                    newX = r.x + r.width - newW;
-                } else if (this.activeHandle === 'tr') {
-                    newY = r.y + r.height - newH;
+                if (!isEdgeHandle) {
+                    const aspect = r.width / r.height;
+                    if (this.activeHandle === 'br' || this.activeHandle === 'tl') {
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            newH = newW / aspect;
+                        } else {
+                            newW = newH * aspect;
+                        }
+                    } else {
+                        if (Math.abs(dx) > Math.abs(dy)) {
+                            newH = newW / aspect;
+                        } else {
+                            newW = newH * aspect;
+                        }
+                    }
+
+                    // Recalculate position for TL/BL/TR handles based on locked ratio
+                    if (this.activeHandle === 'tl') {
+                        newX = r.x + r.width - newW;
+                        newY = r.y + r.height - newH;
+                    } else if (this.activeHandle === 'bl') {
+                        newX = r.x + r.width - newW;
+                    } else if (this.activeHandle === 'tr') {
+                        newY = r.y + r.height - newH;
+                    }
                 }
             }
 
