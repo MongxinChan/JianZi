@@ -66,13 +66,15 @@ export class GrabState extends BaseToolState {
     }
 
     private bindGlobalEvents() {
-        document.addEventListener('mousemove', this.onMouseMoveGlobal);
-        document.addEventListener('mouseup', this.onMouseUpGlobal);
+        document.addEventListener('pointermove', this.onMouseMoveGlobal);
+        document.addEventListener('pointerup', this.onMouseUpGlobal);
+        document.addEventListener('pointercancel', this.onMouseUpGlobal);
     }
 
     private unbindGlobalEvents() {
-        document.removeEventListener('mousemove', this.onMouseMoveGlobal);
-        document.removeEventListener('mouseup', this.onMouseUpGlobal);
+        document.removeEventListener('pointermove', this.onMouseMoveGlobal);
+        document.removeEventListener('pointerup', this.onMouseUpGlobal);
+        document.removeEventListener('pointercancel', this.onMouseUpGlobal);
     }
 
     private onMouseMoveGlobal(e: MouseEvent): void {

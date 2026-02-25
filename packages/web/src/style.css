@@ -244,6 +244,7 @@ svg {
   position: relative;
   overflow: hidden;
   cursor: default;
+  touch-action: none;
 }
 
 .canvas-container {
@@ -871,10 +872,7 @@ svg {
     right: 10px;
   }
 
-  /* 4. Ensure viewport doesn't scroll natively for touch operations */
-  .viewport {
-    touch-action: none;
-  }
+  /* 4. Removed - viewport handles touch-action natively now */
 
   /* 5. Floating text toolbar optimizations */
   .floating-toolbar {
