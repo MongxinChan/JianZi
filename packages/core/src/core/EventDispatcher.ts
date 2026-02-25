@@ -33,11 +33,64 @@ export class EventDispatcher {
             if (activeState) activeState.onMouseUp(e as MouseEvent);
         }) as EventListener);
 
-        // [Infinite Panning] Wheel Support (Trackpad/Mouse Wheel)
-        eventBase.addEventListener('wheel', ((e: Event) => {
+        // [Infinite Panning / Zooming] Wheel Support (Trackpad/Mouse Wheel)
+        eventBase.addEventListener('wheel', ((e: WheelEvent) => {
+            if (e.ctrlKey) {
+                // Desktop Pinch-to-Zoom or Ctrl + Wheel
+                e.preventDefault();
+                // e.deltaY is negative when zooming in (scrolling up), positive when zooming out (scrolling down)
+                const zoomFactor = -e.deltaY * 0.01;
+                // e.g., if deltaY is -100, zoomFactor = 1 -> newScale = oldScale * (1 + 1) -> zoomed x2.
+                // However, a smoother formula is Math.exp
+                const scaleMulti = Math.exp(zoomFactor);
+                this.editor.viewportManager.zoomBy(scaleMulti, e.clientX, e.clientY);
+                this.editor.refresh();
+                return;
+            }
+
             const activeState = this.editor.getActiveState();
-            if (activeState) activeState.onWheel(e as WheelEvent);
+            if (activeState) activeState.onWheel(e);
         }) as EventListener, { passive: false });
+
+        // [Mobile Pinch-to-Zoom] Touch Events
+        let initialPinchDistance = 0;
+        let isPinching = false;
+
+        eventBase.addEventListener('touchstart', ((e: TouchEvent) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                isPinching = true;
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialPinchDistance = Math.hypot(dx, dy);
+            }
+        }) as EventListener, { passive: false });
+
+        eventBase.addEventListener('touchmove', ((e: TouchEvent) => {
+            if (e.touches.length === 2 && isPinching) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const currentDistance = Math.hypot(dx, dy);
+
+                if (initialPinchDistance > 0) {
+                    const scaleMulti = currentDistance / initialPinchDistance;
+                    const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                    const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+                    this.editor.viewportManager.zoomBy(scaleMulti, centerX, centerY);
+                    this.editor.refresh();
+                }
+
+                initialPinchDistance = currentDistance;
+            }
+        }) as EventListener, { passive: false });
+
+        eventBase.addEventListener('touchend', ((e: TouchEvent) => {
+            if (e.touches.length < 2) {
+                isPinching = false;
+            }
+        }) as EventListener);
 
         // Track currently pressed keys for smooth diagonal movement
         const activeKeys = new Set<string>();
