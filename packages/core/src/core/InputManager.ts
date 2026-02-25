@@ -15,13 +15,27 @@ export class InputManager {
     private createInputElement(): HTMLTextAreaElement {
         const input = document.createElement('textarea');
         Object.assign(input.style, {
-            position: 'absolute',
+            position: 'fixed',
             top: '0',
             left: '0',
+            width: '20px',
+            height: '20px',
+            padding: '0',
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
             opacity: '0',
             pointerEvents: 'none',
             zIndex: '-1',
+            fontSize: '16px', // Prevents iOS Safari from zooming in on focus
         });
+
+        // Prevent mobile keyboards from interfering with the canvas input
+        input.setAttribute('autocapitalize', 'off');
+        input.setAttribute('autocorrect', 'off');
+        input.setAttribute('spellcheck', 'false');
+        input.setAttribute('data-gramm', 'false');
+
         document.body.appendChild(input);
         return input;
     }
