@@ -50,10 +50,13 @@ export class GrabState extends BaseToolState {
         this.translateImmediately(dx, dy);
     }
 
-    onMouseDown(e: MouseEvent): void {
+    onMouseDown(e: PointerEvent | MouseEvent): void {
         const target = this.editor.getOptions().eventTarget || this.editor.getOptions().container;
         if (target instanceof HTMLElement) {
             target.style.cursor = 'grabbing';
+            if (e instanceof PointerEvent) {
+                target.setPointerCapture(e.pointerId);
+            }
         }
 
         this.isPanning = true;
@@ -77,7 +80,7 @@ export class GrabState extends BaseToolState {
         document.removeEventListener('pointercancel', this.onMouseUpGlobal);
     }
 
-    private onMouseMoveGlobal(e: MouseEvent): void {
+    private onMouseMoveGlobal(e: PointerEvent | MouseEvent): void {
         if (!this.isPanning) return;
 
         const dx = e.clientX - this.startPan.x;
@@ -106,11 +109,15 @@ export class GrabState extends BaseToolState {
         );
     }
 
-    private onMouseUpGlobal(e: MouseEvent): void {
+    private onMouseUpGlobal(e: PointerEvent | MouseEvent): void {
         if (!this.isPanning) return;
 
         this.isPanning = false;
         const target = this.editor.getOptions().eventTarget || this.editor.getOptions().container;
+
+        if (target instanceof HTMLElement && e instanceof PointerEvent) {
+            target.releasePointerCapture(e.pointerId);
+        }
 
         // Reset cursor to grab mode since we are still in hand tool
         if (this.editor.toolMode === 'hand' && target instanceof HTMLElement) {
@@ -121,6 +128,6 @@ export class GrabState extends BaseToolState {
     }
 
     // Since we bind to document for move/up, we don't strictly need these, but we keep them to satisfy interface
-    onMouseMove(e: MouseEvent): void { }
-    onMouseUp(e: MouseEvent): void { }
+    onMouseMove(e: PointerEvent | MouseEvent): void { }
+    onMouseUp(e: PointerEvent | MouseEvent): void { }
 }

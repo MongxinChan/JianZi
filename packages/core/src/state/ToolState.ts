@@ -10,11 +10,11 @@ export interface ToolState {
     /** 状态关闭时的回调 */
     onDisable(): void;
     /** 鼠标按下 */
-    onMouseDown(e: MouseEvent): void;
+    onMouseDown(e: PointerEvent | MouseEvent): void;
     /** 鼠标移动 */
-    onMouseMove(e: MouseEvent): void;
+    onMouseMove(e: PointerEvent | MouseEvent): void;
     /** 鼠标抬起 */
-    onMouseUp(e: MouseEvent): void;
+    onMouseUp(e: PointerEvent | MouseEvent): void;
     /** 滚轮事件 */
     onWheel(e: WheelEvent): void;
 }
@@ -27,8 +27,8 @@ export abstract class BaseToolState implements ToolState {
 
     onEnable(): void { }
     onDisable(): void { }
-    onMouseDown(e: MouseEvent): void { }
-    onMouseMove(e: MouseEvent): void { }
-    onMouseUp(e: MouseEvent): void { }
+    onMouseDown(e: PointerEvent | MouseEvent): void { }
+    onMouseMove(e: PointerEvent | MouseEvent): void { }
+    onMouseUp(e: PointerEvent | MouseEvent): void { }
     onWheel(e: WheelEvent): void { }
 }

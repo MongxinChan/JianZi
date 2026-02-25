@@ -56,7 +56,7 @@ export class SelectState extends BaseToolState {
         };
     }
 
-    onMouseDown(e: MouseEvent): void {
+    onMouseDown(e: PointerEvent | MouseEvent): void {
         const pos = this.getMousePos(e);
         const { x, y } = pos;
 
@@ -150,7 +150,7 @@ export class SelectState extends BaseToolState {
         document.removeEventListener('pointercancel', this.onMouseUpGlobal);
     }
 
-    onMouseMove(e: MouseEvent): void {
+    onMouseMove(e: PointerEvent | MouseEvent): void {
         // --- Hover: show resize cursor on handles ---
         // (This happens locally on the container)
         if (this.isDragging || this.isResizing || this.isSelectingText) return;
@@ -163,7 +163,7 @@ export class SelectState extends BaseToolState {
             : 'default';
     }
 
-    private onMouseMoveGlobal(e: MouseEvent): void {
+    private onMouseMoveGlobal(e: PointerEvent | MouseEvent): void {
         const { x, y } = this.getMousePos(e);
 
         // --- Resize mode ---
@@ -303,7 +303,7 @@ export class SelectState extends BaseToolState {
         }
     }
 
-    private onMouseUpGlobal(e: MouseEvent): void {
+    private onMouseUpGlobal(e: PointerEvent | MouseEvent): void {
         const delta = this.editor.selectionManager.selectedDeltaId ? this.editor.deltas.get(this.editor.selectionManager.selectedDeltaId) : null;
 
         // Record history for Drag
