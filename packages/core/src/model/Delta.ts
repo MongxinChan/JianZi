@@ -109,11 +109,30 @@ export class TextDelta extends Delta {
         };
     }
 
+    private _layoutCache: {
+        hash: string;
+        result: {
+            positions: {
+                char: string;
+                cx: number;
+                cy: number;
+                width: number;
+                height: number;
+                colWidth?: number; // For Vertical
+                rowHeight?: number; // For Horizontal
+                style: ReturnType<TextDelta['_getEffectiveStyle']>;
+            }[];
+            totalWidth: number;
+            totalHeight: number;
+        };
+    } | null = null;
+
     /**
      * Calculate character positions for both modes with RichText support.
      * Returns positions array and the bounding box dimensions.
      */
     private _layout(
+        ctx: CanvasRenderingContext2D,
         mode: LayoutMode,
         areaWidth: number,
         areaHeight: number,
@@ -124,13 +143,18 @@ export class TextDelta extends Delta {
             cy: number;
             width: number;
             height: number;
-            colWidth?: number; // For Vertical
-            rowHeight?: number; // For Horizontal
+            colWidth?: number;
+            rowHeight?: number;
             style: ReturnType<TextDelta['_getEffectiveStyle']>;
         }[];
         totalWidth: number;
         totalHeight: number
     } {
+        const hash = `${mode}:${areaWidth}:${areaHeight}:${this.layoutConstraintW}:${this.layoutConstraintH}:${this.letterSpacing}:${this.lineHeight}:${this.fontSize}:${this.fontFamily}:${JSON.stringify(this.fragments)}`;
+        if (this._layoutCache && this._layoutCache.hash === hash) {
+            return this._layoutCache.result;
+        }
+
         const positions: {
             char: string;
             cx: number;
@@ -168,12 +192,10 @@ export class TextDelta extends Delta {
                 const charH = charSize * lineHeight;
                 const charW = charSize + this.letterSpacing;
 
-                const chars = fragment.text.split('');
-                for (const char of chars) {
+                for (const char of fragment.text) {
                     if (char === '\n') {
                         if (colWidth === 0) colWidth = charW;
 
-                        // Push an invisible space to represent the newline so the line exists
                         colBuffer.push({
                             char: ' ',
                             cx: currentX,
@@ -208,7 +230,9 @@ export class TextDelta extends Delta {
 
             const totalWidth = currentX;
             const totalHeight = maxColHeight;
-            return { positions, totalWidth, totalHeight };
+            const result = { positions, totalWidth, totalHeight };
+            this._layoutCache = { hash, result };
+            return result;
 
         } else {
             // Horizontal
@@ -235,19 +259,22 @@ export class TextDelta extends Delta {
                 const charSize = style.fontSize;
                 const lineHeight = 1.5;
                 const charH = charSize * lineHeight;
-                const charW = charSize + this.letterSpacing;
 
-                const chars = fragment.text.split('');
-                for (const char of chars) {
+                const fStyle = style.fontStyle || 'normal';
+                const fWeight = style.fontWeight || 'normal';
+                ctx.font = `${fStyle} ${fWeight} ${style.fontSize}px ${style.fontFamily}`;
+
+                for (const char of fragment.text) {
                     if (char === '\n') {
                         if (rowHeight === 0) rowHeight = charH;
+                        // For newline, simulate wide space
+                        const spaceW = charSize + this.letterSpacing;
 
-                        // Push an invisible space to represent the newline
                         rowBuffer.push({
                             char: ' ',
                             cx: currentX,
                             cy: currentY,
-                            width: charW,
+                            width: spaceW,
                             height: charH,
                             style
                         });
@@ -255,6 +282,10 @@ export class TextDelta extends Delta {
                         flushRow();
                         continue;
                     }
+
+                    // Dynamically measure width for horizontal layout
+                    const charMetrics = ctx.measureText(char);
+                    const charW = charMetrics.width + this.letterSpacing;
 
                     if (currentX + charW > areaWidth && currentX > 0) {
                         flushRow();
@@ -277,14 +308,16 @@ export class TextDelta extends Delta {
 
             const totalWidth = maxRowWidth;
             const totalHeight = currentY;
-            return { positions, totalWidth, totalHeight };
+            const result = { positions, totalWidth, totalHeight };
+            this._layoutCache = { hash, result };
+            return result;
         }
     }
 
     measure(ctx: CanvasRenderingContext2D, mode: LayoutMode = 'horizontal', areaWidth: number = 9999, areaHeight: number = 9999): { width: number; height: number } {
         const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
         const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(mode, layoutW, layoutH);
+        const layout = this._layout(ctx, mode, layoutW, layoutH);
         return {
             width: this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth,
             height: this.layoutConstraintH > 0 ? this.layoutConstraintH : layout.totalHeight,
@@ -298,7 +331,7 @@ export class TextDelta extends Delta {
         // Use layout constraints if user has resized, otherwise use canvas area
         const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
         const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(mode, layoutW, layoutH);
+        const layout = this._layout(ctx, mode, layoutW, layoutH);
 
         // Always update bounding box from actual content, but respect manual resize
         this.width = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
@@ -310,16 +343,7 @@ export class TextDelta extends Delta {
             let drawY = 0;
 
             if (mode === 'vertical') {
-                // RTL Layout:
-                // cx is LTR column start (0, colWidth1, colWidth1+colWidth2...)
-                // We want to flip this relative to totalWidth.
-                // Right edge of bounding box is `this.x + this.width`.
-                // Column Right Edge (LTR) is `cx + colWidth`.
-                // Distance from LTR Left to Column Right is `cx + colWidth`.
-                // In RTL, this becomes Distance from RTL Right to Column Left? 
-                // Let's use simpler math:
-                // RTL Logic matching draw()
-                // Use layoutConstraintW if set, otherwise totalWidth
+                // RTL Layout
                 const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
                 const rtlX = boxWidth - (cx + (colWidth || width));
                 drawX = this.x + rtlX;
@@ -383,22 +407,18 @@ export class TextDelta extends Delta {
     }
 
     /**
-     * Get character index at specific coordinate (relative to delta's x,y is handled by passing absolute x,y but we need to adjust).
-     * Actually x,y passed should be absolute canvas coordinates?
-     * Yes.
+     * Get character index at specific coordinate.
      */
     public getCharIndexAt(ctx: CanvasRenderingContext2D, x: number, y: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): number {
         const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
         const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(mode, layoutW, layoutH);
-        // For simplicity, we assume hitting anywhere inside the char box returns its index.
+        const layout = this._layout(ctx, mode, layoutW, layoutH);
+
         const localX = x - this.x;
         const localY = y - this.y;
 
-        // Iterate positions to find hit
         let index = 0;
 
-        // We need to match the 'draw' logic for RTL
         for (const pos of layout.positions) {
             const { cx, cy, width, height, colWidth, rowHeight } = pos;
             let targetX = cx;
@@ -407,8 +427,6 @@ export class TextDelta extends Delta {
             let targetH = height;
 
             if (mode === 'vertical') {
-                // RTL Logic matching draw()
-                // Use layoutConstraintW if set, otherwise totalWidth
                 const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
                 const rtlX = boxWidth - (cx + (colWidth || width));
                 targetX = rtlX;
@@ -416,17 +434,12 @@ export class TextDelta extends Delta {
                     targetX += (colWidth - width) / 2;
                 }
                 targetY = cy;
-                // Hit test against the full column width/height or just the char?
-                // Better to hit test the full "cell" for easier selection.
-                // Cell Width is colWidth? Cell Height is height (charH).
                 targetW = colWidth || width;
             } else {
-                // Horizontal
-                // drawY might be centered
                 if (rowHeight && height < rowHeight) {
                     targetY += (rowHeight - height) / 2;
                 }
-                targetH = rowHeight || height; // Hit test full row height
+                targetH = rowHeight || height;
             }
 
             if (
@@ -444,7 +457,7 @@ export class TextDelta extends Delta {
     public getCaretRect(ctx: CanvasRenderingContext2D, index: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): { x: number; y: number; width: number; height: number } | null {
         const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
         const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(mode, layoutW, layoutH);
+        const layout = this._layout(ctx, mode, layoutW, layoutH);
 
         const posIdx = Math.max(0, Math.min(index, layout.positions.length));
         let drawX = this.x;
@@ -510,7 +523,7 @@ export class TextDelta extends Delta {
     public getRectsForRange(ctx: CanvasRenderingContext2D, start: number, end: number, mode: LayoutMode, areaWidth: number = 9999, areaHeight: number = 9999): { x: number; y: number; width: number; height: number }[] {
         const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
         const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(mode, layoutW, layoutH);
+        const layout = this._layout(ctx, mode, layoutW, layoutH);
         const rects: { x: number; y: number; width: number; height: number }[] = [];
 
         // Clamp
@@ -530,23 +543,11 @@ export class TextDelta extends Delta {
                 const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
                 const rtlX = boxWidth - (cx + (colWidth || width));
                 drawX = this.x + rtlX;
-                // Full column width for selection looks better?
-                // Or just char width?
-                // Usually selection covers the full "line height" (width in vertical).
-                // So use colWidth if available.
                 if (colWidth) {
-                    // Re-calculate drawX for full column
-                    // rtlX was based on colWidth. 
-                    // drawX is correct left edge of column.
                     drawW = colWidth;
                 } else {
                     drawW = width;
                 }
-                // Vertical selection usually continuous?
-                // The gap between chars?
-                // charH includes lineHeight logic?
-                // In _layout: charH = charSize * lineHeight.
-                // So height already includes gap.
                 drawH = height;
                 drawY = this.y + cy;
             } else {
@@ -554,14 +555,8 @@ export class TextDelta extends Delta {
                 drawY = this.y + cy;
                 if (rowHeight) {
                     drawH = rowHeight;
-                    if (rowHeight > height) {
-                        // If we centered text, we still want selection to cover full row height
-                        // drawY is top of row.
-                    }
                 }
-                drawW = width; // Includes letterSpacing? 
-                // width = charSize + letterSpacing in _layout
-                // So yes.
+                drawW = width;
             }
 
             rects.push({ x: drawX, y: drawY, width: drawW, height: drawH });
