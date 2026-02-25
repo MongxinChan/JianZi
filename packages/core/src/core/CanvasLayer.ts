@@ -43,6 +43,15 @@ export class CanvasLayer {
         this.ctx.fillStyle = this.options.backgroundColor || '#fdfaf5';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
+        const padding = this.options.padding || 60;
+        if (this.options.grid && this.options.grid.type !== 'none') {
+            const mainText = deltas.getAll().find(d => d.id === 'main-text' && d instanceof TextDelta) as TextDelta ||
+                deltas.getAll().find(d => d instanceof TextDelta) as TextDelta;
+            if (mainText) {
+                mainText.drawGrid(this.ctx, this.options.grid, mode, this.width, this.height, padding);
+            }
+        }
+
         // Draw Deltas
         deltas.forEach(delta => {
             if (delta instanceof TextDelta) {
@@ -66,6 +75,15 @@ export class CanvasLayer {
         oCtx.clearRect(0, 0, this.width, this.height);
         oCtx.fillStyle = this.options.backgroundColor || '#fdfaf5';
         oCtx.fillRect(0, 0, this.width, this.height);
+
+        const padding = this.options.padding || 60;
+        if (this.options.grid && this.options.grid.type !== 'none') {
+            const mainText = deltas.getAll().find(d => d.id === 'main-text' && d instanceof TextDelta) as TextDelta ||
+                deltas.getAll().find(d => d instanceof TextDelta) as TextDelta;
+            if (mainText) {
+                mainText.drawGrid(oCtx, this.options.grid, mode, this.width, this.height, padding);
+            }
+        }
 
         deltas.forEach(delta => {
             if (delta instanceof TextDelta) {

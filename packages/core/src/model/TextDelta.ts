@@ -649,4 +649,119 @@ export class TextDelta extends Delta {
         }
         return null;
     }
+
+    public drawGrid(ctx: CanvasRenderingContext2D, grid: import('../types').GridOptions, mode: LayoutMode, areaWidth: number, areaHeight: number, padding: number) {
+        if (!grid || grid.type === 'none') return;
+        ctx.save();
+        ctx.strokeStyle = grid.color || '#cc0000';
+        ctx.lineWidth = grid.lineWidth || 1;
+        ctx.globalAlpha = grid.opacity || 0.3;
+
+        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
+        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
+        const layout = this._layout(ctx, mode, layoutW, layoutH);
+
+        const isGrid = grid.type === 'grid';
+
+        ctx.beginPath();
+        if (mode === 'vertical') {
+            const cols = new Set<number>();
+            let defaultColW = this.fontSize + this.letterSpacing;
+
+            for (const pos of layout.positions) {
+                if (pos.colWidth) {
+                    defaultColW = Math.max(defaultColW, pos.colWidth);
+                }
+                const colW = pos.colWidth || pos.width;
+                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
+                const rtlX = boxWidth - (pos.cx + colW);
+                const drawX = this.x + rtlX;
+                cols.add(drawX);
+                cols.add(drawX + colW);
+            }
+
+            const colEdges = Array.from(cols).sort((a, b) => b - a);
+
+            for (const x of colEdges) {
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, areaHeight - padding);
+            }
+
+            let rightmost = colEdges.length > 0 ? colEdges[0] : areaWidth - padding;
+            let currentX = rightmost + defaultColW;
+            while (currentX <= areaWidth - padding) {
+                ctx.moveTo(currentX, padding);
+                ctx.lineTo(currentX, areaHeight - padding);
+                currentX += defaultColW;
+            }
+
+            let leftmost = colEdges.length > 0 ? colEdges[colEdges.length - 1] : areaWidth - padding;
+            currentX = leftmost - defaultColW;
+            while (currentX >= padding) {
+                ctx.moveTo(currentX, padding);
+                ctx.lineTo(currentX, areaHeight - padding);
+                currentX -= defaultColW;
+            }
+
+            if (isGrid) {
+                let currentY = padding;
+                const cellH = this.fontSize + this.letterSpacing;
+                while (currentY <= areaHeight - padding) {
+                    ctx.moveTo(padding, currentY);
+                    ctx.lineTo(areaWidth - padding, currentY);
+                    currentY += cellH;
+                }
+            }
+
+        } else {
+            const rows = new Set<number>();
+            let defaultRowH = this.fontSize * this.lineHeight;
+
+            for (const pos of layout.positions) {
+                if (pos.rowHeight) {
+                    defaultRowH = Math.max(defaultRowH, pos.rowHeight);
+                }
+                const rowH = pos.rowHeight || pos.height;
+                const drawY = this.y + pos.cy;
+                rows.add(drawY);
+                rows.add(drawY + rowH);
+            }
+
+            const rowEdges = Array.from(rows).sort((a, b) => a - b);
+
+            for (const y of rowEdges) {
+                ctx.moveTo(padding, y);
+                ctx.lineTo(areaWidth - padding, y);
+            }
+
+            let topmost = rowEdges.length > 0 ? rowEdges[0] : padding;
+            let currentY = topmost - defaultRowH;
+            while (currentY >= padding) {
+                ctx.moveTo(padding, currentY);
+                ctx.lineTo(areaWidth - padding, currentY);
+                currentY -= defaultRowH;
+            }
+
+            let bottommost = rowEdges.length > 0 ? rowEdges[rowEdges.length - 1] : padding;
+            currentY = bottommost + defaultRowH;
+            while (currentY <= areaHeight - padding) {
+                ctx.moveTo(padding, currentY);
+                ctx.lineTo(areaWidth - padding, currentY);
+                currentY += defaultRowH;
+            }
+
+            if (isGrid) {
+                let currentX = padding;
+                const cellW = this.fontSize + this.letterSpacing;
+                while (currentX <= areaWidth - padding) {
+                    ctx.moveTo(currentX, padding);
+                    ctx.lineTo(currentX, areaHeight - padding);
+                    currentX += cellW;
+                }
+            }
+        }
+
+        ctx.stroke();
+        ctx.restore();
+    }
 }
