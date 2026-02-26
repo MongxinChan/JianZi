@@ -664,16 +664,15 @@ export class TextDelta extends Delta {
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
             const drawColW = explicitSize + explicitGap;
+            const anchorX = this.x;
 
-            // Draw vertical lines from right-to-left
-            // Start at the rightmost padding edge, and place a line every drawColW until hitting the left padding
-            let currentX = areaWidth - padding;
-            // Always draw the rightmost boundary
-            ctx.moveTo(currentX, padding);
-            ctx.lineTo(currentX, areaHeight - padding);
+            // Find the rightmost vertical line that is <= areaWidth - padding
+            let currentX = anchorX;
+            while (currentX + drawColW <= areaWidth - padding) {
+                currentX += drawColW;
+            }
 
-            // If aligning with text offsets, we shift the grid to match the text box's starting X coordinate if it's explicitly set. 
-            // In JianZi, the background grid usually spans rigidly from the padding boundary inwards.
+            // Draw lines from right to left
             while (currentX >= padding) {
                 ctx.moveTo(currentX, padding);
                 ctx.lineTo(currentX, areaHeight - padding);
@@ -681,9 +680,15 @@ export class TextDelta extends Delta {
             }
 
             if (isGrid) {
-                // Horizontal lines for the "grid" pattern
-                const cellH = explicitSize + explicitGap; // Square grid cells based on size+gap 
-                let currentY = padding;
+                const anchorY = this.y;
+                const cellH = explicitSize + explicitGap;
+                let currentY = anchorY;
+
+                // Find the topmost horizontal line that is >= padding
+                while (currentY - cellH >= padding) {
+                    currentY -= cellH;
+                }
+
                 while (currentY <= areaHeight - padding) {
                     ctx.moveTo(padding, currentY);
                     ctx.lineTo(areaWidth - padding, currentY);
@@ -695,12 +700,13 @@ export class TextDelta extends Delta {
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : (this.fontSize * (this.lineHeight - 1));
             const drawRowH = explicitSize + explicitGap;
+            const anchorY = this.y;
 
-            // Draw horizontal lines from top-to-bottom
-            let currentY = padding;
-            // Always draw the topmost boundary
-            ctx.moveTo(padding, currentY);
-            ctx.lineTo(areaWidth - padding, currentY);
+            // Find the topmost horizontal line that is >= padding
+            let currentY = anchorY;
+            while (currentY - drawRowH >= padding) {
+                currentY -= drawRowH;
+            }
 
             while (currentY <= areaHeight - padding) {
                 ctx.moveTo(padding, currentY);
@@ -709,9 +715,15 @@ export class TextDelta extends Delta {
             }
 
             if (isGrid) {
-                // Vertical lines for the "grid" pattern
-                let currentX = padding;
+                const anchorX = this.x;
                 const cellW = explicitSize + explicitGap;
+                let currentX = anchorX;
+
+                // Find the leftmost vertical line that is >= padding
+                while (currentX - cellW >= padding) {
+                    currentX -= cellW;
+                }
+
                 while (currentX <= areaWidth - padding) {
                     ctx.moveTo(currentX, padding);
                     ctx.lineTo(currentX, areaHeight - padding);
