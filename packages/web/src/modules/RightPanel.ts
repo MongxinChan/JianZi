@@ -67,6 +67,44 @@ export function initRightPanel() {
         });
     });
 
+    // ============================================================
+    // Grid Settings
+    // ============================================================
+    const gridTypeSelect = document.getElementById('grid-type') as HTMLSelectElement;
+    const gridColorInput = document.getElementById('grid-color') as HTMLInputElement;
+    const gridSizeInput = document.getElementById('grid-size') as HTMLInputElement;
+    const gridGapInput = document.getElementById('grid-gap') as HTMLInputElement;
+
+    function updateGridOptions() {
+        const currentGrid = jianzi.getOptions().grid || { type: 'line', color: '#cc0000', opacity: 0.2 };
+        const newSize = gridSizeInput?.value ? parseInt(gridSizeInput.value, 10) : undefined;
+        const newGap = gridGapInput?.value ? parseInt(gridGapInput.value, 10) : undefined;
+
+        jianzi.updateOptions({
+            grid: {
+                ...currentGrid,
+                type: (gridTypeSelect?.value || 'line') as 'none' | 'line' | 'grid',
+                color: gridColorInput?.value || '#cc0000',
+                size: newSize,
+                gap: newGap
+            }
+        });
+    }
+
+    gridTypeSelect?.addEventListener('change', updateGridOptions);
+    gridColorInput?.addEventListener('input', updateGridOptions);
+    gridSizeInput?.addEventListener('input', updateGridOptions);
+    gridGapInput?.addEventListener('input', updateGridOptions);
+
+    // Initial read for grid settings (sync UI with initial jianzi options)
+    const initGrid = jianzi.getOptions().grid;
+    if (initGrid) {
+        if (gridTypeSelect) gridTypeSelect.value = initGrid.type;
+        if (gridColorInput && initGrid.color) gridColorInput.value = initGrid.color;
+        if (gridSizeInput && initGrid.size !== undefined) gridSizeInput.value = String(initGrid.size);
+        if (gridGapInput && initGrid.gap !== undefined) gridGapInput.value = String(initGrid.gap);
+    }
+
     // Export Settings
     const watermarkCheck = document.getElementById('export-watermark') as HTMLInputElement;
     watermarkCheck?.addEventListener('change', () => {

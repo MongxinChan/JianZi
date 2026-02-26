@@ -280,6 +280,34 @@
                         <div class="prop-divider"></div>
 
                         <div class="prop-section">
+                            <div class="prop-section-title">网格设置</div>
+                            <div class="prop-row prop-row-between">
+                                <label>类型</label>
+                                <select id="grid-type" class="prop-select" style="width: auto;">
+                                    <option value="none">无 (None)</option>
+                                    <option value="line" selected>横/竖线 (Line)</option>
+                                    <option value="grid">方格 (Grid)</option>
+                                </select>
+                            </div>
+                            <div class="prop-row prop-row-between" style="margin-top: 8px;">
+                                <label>颜色</label>
+                                <input type="color" id="grid-color" class="prop-color" value="#cc0000">
+                            </div>
+                            <div class="prop-row prop-row-between" style="margin-top: 8px;">
+                                <label>大小</label>
+                                <input type="number" id="grid-size" class="prop-input-sm" placeholder="自适应"
+                                    title="留空则跟随字号">
+                            </div>
+                            <div class="prop-row prop-row-between" style="margin-top: 8px;">
+                                <label>间隙</label>
+                                <input type="number" id="grid-gap" class="prop-input-sm" placeholder="自适应"
+                                    title="留空则跟随字距/行距">
+                            </div>
+                        </div>
+
+                        <div class="prop-divider"></div>
+
+                        <div class="prop-section">
                             <div class="prop-section-title">导出设置</div>
                             <div class="prop-row prop-row-between">
                                 <label>水印</label>
