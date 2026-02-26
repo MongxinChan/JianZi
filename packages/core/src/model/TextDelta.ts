@@ -660,30 +660,40 @@ export class TextDelta extends Delta {
         const isGrid = grid.type === 'grid';
 
         ctx.beginPath();
-        // Add a bounding rectangle to ensure the grid is fully enclosed ("closed boxes")
-        ctx.rect(padding, padding, areaWidth - 2 * padding, areaHeight - 2 * padding);
 
         if (mode === 'vertical') {
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
             const drawColW = explicitSize + explicitGap;
 
-            let currentX = areaWidth - padding;
+            const usableW = areaWidth - 2 * padding;
+            const maxCols = Math.floor(usableW / drawColW);
+            const actualGridW = maxCols * drawColW;
+            // For vertical text, grid starts from right side padding and grows leftward
+            const gridStartX = areaWidth - padding - actualGridW;
 
-            // Draw lines from right to left
-            while (currentX >= padding) {
+            // Height truncation (for 'grid' mode only)
+            const cellH = explicitSize + explicitGap;
+            const usableH = areaHeight - 2 * padding;
+            const maxRows = isGrid ? Math.floor(usableH / cellH) : 0;
+            const actualGridH = isGrid ? maxRows * cellH : usableH;
+
+            // Draw bounding box
+            ctx.rect(gridStartX, padding, actualGridW, actualGridH);
+
+            let currentX = areaWidth - padding;
+            // Draw vertical column lines
+            for (let i = 0; i <= maxCols; i++) {
                 ctx.moveTo(currentX, padding);
-                ctx.lineTo(currentX, areaHeight - padding);
+                ctx.lineTo(currentX, padding + actualGridH);
                 currentX -= drawColW;
             }
 
             if (isGrid) {
-                const cellH = explicitSize + explicitGap;
                 let currentY = padding;
-
-                while (currentY <= areaHeight - padding) {
-                    ctx.moveTo(padding, currentY);
-                    ctx.lineTo(areaWidth - padding, currentY);
+                for (let j = 0; j <= maxRows; j++) {
+                    ctx.moveTo(gridStartX, currentY);
+                    ctx.lineTo(gridStartX + actualGridW, currentY);
                     currentY += cellH;
                 }
             }
@@ -693,21 +703,32 @@ export class TextDelta extends Delta {
             const explicitGap = grid.gap !== undefined ? grid.gap : (this.fontSize * (this.lineHeight - 1));
             const drawRowH = explicitSize + explicitGap;
 
-            let currentY = padding;
+            const usableH = areaHeight - 2 * padding;
+            const maxRows = Math.floor(usableH / drawRowH);
+            const actualGridH = maxRows * drawRowH;
+            const gridStartY = padding;
 
-            while (currentY <= areaHeight - padding) {
+            // Width truncation (for 'grid' mode only)
+            const cellW = explicitSize + explicitGap;
+            const usableW = areaWidth - 2 * padding;
+            const maxCols = isGrid ? Math.floor(usableW / cellW) : 0;
+            const actualGridW = isGrid ? maxCols * cellW : usableW;
+
+            // Draw bounding box
+            ctx.rect(padding, gridStartY, actualGridW, actualGridH);
+
+            let currentY = gridStartY;
+            for (let i = 0; i <= maxRows; i++) {
                 ctx.moveTo(padding, currentY);
-                ctx.lineTo(areaWidth - padding, currentY);
+                ctx.lineTo(padding + actualGridW, currentY);
                 currentY += drawRowH;
             }
 
             if (isGrid) {
-                const cellW = explicitSize + explicitGap;
                 let currentX = padding;
-
-                while (currentX <= areaWidth - padding) {
-                    ctx.moveTo(currentX, padding);
-                    ctx.lineTo(currentX, areaHeight - padding);
+                for (let j = 0; j <= maxCols; j++) {
+                    ctx.moveTo(currentX, gridStartY);
+                    ctx.lineTo(currentX, gridStartY + actualGridH);
                     currentX += cellW;
                 }
             }
