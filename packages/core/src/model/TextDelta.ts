@@ -657,59 +657,33 @@ export class TextDelta extends Delta {
         ctx.lineWidth = grid.lineWidth || 1;
         ctx.globalAlpha = grid.opacity || 0.3;
 
-        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
-        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(ctx, mode, layoutW, layoutH);
-
         const isGrid = grid.type === 'grid';
 
         ctx.beginPath();
         if (mode === 'vertical') {
-            const cols = new Set<number>();
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
-            let defaultColW = explicitSize + explicitGap;
+            const drawColW = explicitSize + explicitGap;
 
-            for (const pos of layout.positions) {
-                if (pos.colWidth) {
-                    defaultColW = Math.max(defaultColW, pos.colWidth);
-                }
-                const colW = pos.colWidth || pos.width;
-                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
-                const rtlX = boxWidth - (pos.cx + colW);
-                const drawX = this.x + rtlX;
-                cols.add(drawX);
-                cols.add(drawX + colW);
-            }
+            // Draw vertical lines from right-to-left
+            // Start at the rightmost padding edge, and place a line every drawColW until hitting the left padding
+            let currentX = areaWidth - padding;
+            // Always draw the rightmost boundary
+            ctx.moveTo(currentX, padding);
+            ctx.lineTo(currentX, areaHeight - padding);
 
-            const colEdges = Array.from(cols).sort((a, b) => b - a);
-
-            for (const x of colEdges) {
-                ctx.moveTo(x, padding);
-                ctx.lineTo(x, areaHeight - padding);
-            }
-
-            let rightmost = colEdges.length > 0 ? colEdges[0] : areaWidth - padding;
-            let currentX = rightmost + defaultColW;
-            while (currentX <= areaWidth - padding) {
-                ctx.moveTo(currentX, padding);
-                ctx.lineTo(currentX, areaHeight - padding);
-                currentX += defaultColW;
-            }
-
-            let leftmost = colEdges.length > 0 ? colEdges[colEdges.length - 1] : areaWidth - padding;
-            currentX = leftmost - defaultColW;
+            // If aligning with text offsets, we shift the grid to match the text box's starting X coordinate if it's explicitly set. 
+            // In JianZi, the background grid usually spans rigidly from the padding boundary inwards.
             while (currentX >= padding) {
                 ctx.moveTo(currentX, padding);
                 ctx.lineTo(currentX, areaHeight - padding);
-                currentX -= defaultColW;
+                currentX -= drawColW;
             }
 
             if (isGrid) {
+                // Horizontal lines for the "grid" pattern
+                const cellH = explicitSize + explicitGap; // Square grid cells based on size+gap 
                 let currentY = padding;
-                const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
-                const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
-                const cellH = explicitSize + explicitGap;
                 while (currentY <= areaHeight - padding) {
                     ctx.moveTo(padding, currentY);
                     ctx.lineTo(areaWidth - padding, currentY);
@@ -718,48 +692,25 @@ export class TextDelta extends Delta {
             }
 
         } else {
-            const rows = new Set<number>();
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : (this.fontSize * (this.lineHeight - 1));
-            let defaultRowH = explicitSize + explicitGap;
+            const drawRowH = explicitSize + explicitGap;
 
-            for (const pos of layout.positions) {
-                if (pos.rowHeight) {
-                    defaultRowH = Math.max(defaultRowH, pos.rowHeight);
-                }
-                const rowH = pos.rowHeight || pos.height;
-                const drawY = this.y + pos.cy;
-                rows.add(drawY);
-                rows.add(drawY + rowH);
-            }
+            // Draw horizontal lines from top-to-bottom
+            let currentY = padding;
+            // Always draw the topmost boundary
+            ctx.moveTo(padding, currentY);
+            ctx.lineTo(areaWidth - padding, currentY);
 
-            const rowEdges = Array.from(rows).sort((a, b) => a - b);
-
-            for (const y of rowEdges) {
-                ctx.moveTo(padding, y);
-                ctx.lineTo(areaWidth - padding, y);
-            }
-
-            let topmost = rowEdges.length > 0 ? rowEdges[0] : padding;
-            let currentY = topmost - defaultRowH;
-            while (currentY >= padding) {
-                ctx.moveTo(padding, currentY);
-                ctx.lineTo(areaWidth - padding, currentY);
-                currentY -= defaultRowH;
-            }
-
-            let bottommost = rowEdges.length > 0 ? rowEdges[rowEdges.length - 1] : padding;
-            currentY = bottommost + defaultRowH;
             while (currentY <= areaHeight - padding) {
                 ctx.moveTo(padding, currentY);
                 ctx.lineTo(areaWidth - padding, currentY);
-                currentY += defaultRowH;
+                currentY += drawRowH;
             }
 
             if (isGrid) {
+                // Vertical lines for the "grid" pattern
                 let currentX = padding;
-                const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
-                const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
                 const cellW = explicitSize + explicitGap;
                 while (currentX <= areaWidth - padding) {
                     ctx.moveTo(currentX, padding);
