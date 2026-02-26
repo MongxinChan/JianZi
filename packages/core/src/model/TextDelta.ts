@@ -660,6 +660,9 @@ export class TextDelta extends Delta {
         const isGrid = grid.type === 'grid';
 
         ctx.beginPath();
+        // Add a bounding rectangle to ensure the grid is fully enclosed ("closed boxes")
+        ctx.rect(padding, padding, areaWidth - 2 * padding, areaHeight - 2 * padding);
+
         if (mode === 'vertical') {
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
