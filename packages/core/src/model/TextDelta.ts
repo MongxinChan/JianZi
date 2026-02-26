@@ -666,7 +666,9 @@ export class TextDelta extends Delta {
         ctx.beginPath();
         if (mode === 'vertical') {
             const cols = new Set<number>();
-            let defaultColW = this.fontSize + this.letterSpacing;
+            const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
+            const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
+            let defaultColW = explicitSize + explicitGap;
 
             for (const pos of layout.positions) {
                 if (pos.colWidth) {
@@ -705,7 +707,9 @@ export class TextDelta extends Delta {
 
             if (isGrid) {
                 let currentY = padding;
-                const cellH = this.fontSize + this.letterSpacing;
+                const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
+                const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
+                const cellH = explicitSize + explicitGap;
                 while (currentY <= areaHeight - padding) {
                     ctx.moveTo(padding, currentY);
                     ctx.lineTo(areaWidth - padding, currentY);
@@ -715,7 +719,9 @@ export class TextDelta extends Delta {
 
         } else {
             const rows = new Set<number>();
-            let defaultRowH = this.fontSize * this.lineHeight;
+            const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
+            const explicitGap = grid.gap !== undefined ? grid.gap : (this.fontSize * (this.lineHeight - 1));
+            let defaultRowH = explicitSize + explicitGap;
 
             for (const pos of layout.positions) {
                 if (pos.rowHeight) {
@@ -752,7 +758,9 @@ export class TextDelta extends Delta {
 
             if (isGrid) {
                 let currentX = padding;
-                const cellW = this.fontSize + this.letterSpacing;
+                const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
+                const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
+                const cellW = explicitSize + explicitGap;
                 while (currentX <= areaWidth - padding) {
                     ctx.moveTo(currentX, padding);
                     ctx.lineTo(currentX, areaHeight - padding);
