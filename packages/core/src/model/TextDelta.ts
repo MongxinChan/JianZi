@@ -664,13 +664,8 @@ export class TextDelta extends Delta {
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
             const drawColW = explicitSize + explicitGap;
-            const anchorX = this.x;
 
-            // Find the rightmost vertical line that is <= areaWidth - padding
-            let currentX = anchorX;
-            while (currentX + drawColW <= areaWidth - padding) {
-                currentX += drawColW;
-            }
+            let currentX = areaWidth - padding;
 
             // Draw lines from right to left
             while (currentX >= padding) {
@@ -680,14 +675,8 @@ export class TextDelta extends Delta {
             }
 
             if (isGrid) {
-                const anchorY = this.y;
                 const cellH = explicitSize + explicitGap;
-                let currentY = anchorY;
-
-                // Find the topmost horizontal line that is >= padding
-                while (currentY - cellH >= padding) {
-                    currentY -= cellH;
-                }
+                let currentY = padding;
 
                 while (currentY <= areaHeight - padding) {
                     ctx.moveTo(padding, currentY);
@@ -700,13 +689,8 @@ export class TextDelta extends Delta {
             const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
             const explicitGap = grid.gap !== undefined ? grid.gap : (this.fontSize * (this.lineHeight - 1));
             const drawRowH = explicitSize + explicitGap;
-            const anchorY = this.y;
 
-            // Find the topmost horizontal line that is >= padding
-            let currentY = anchorY;
-            while (currentY - drawRowH >= padding) {
-                currentY -= drawRowH;
-            }
+            let currentY = padding;
 
             while (currentY <= areaHeight - padding) {
                 ctx.moveTo(padding, currentY);
@@ -715,14 +699,8 @@ export class TextDelta extends Delta {
             }
 
             if (isGrid) {
-                const anchorX = this.x;
                 const cellW = explicitSize + explicitGap;
-                let currentX = anchorX;
-
-                // Find the leftmost vertical line that is >= padding
-                while (currentX - cellW >= padding) {
-                    currentX -= cellW;
-                }
+                let currentX = padding;
 
                 while (currentX <= areaWidth - padding) {
                     ctx.moveTo(currentX, padding);

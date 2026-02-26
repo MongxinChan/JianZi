@@ -210,8 +210,8 @@ export class Editor {
     const textDelta = new TextDelta({
       id: `text-${Date.now()}`,
       type: 'text' as any,
-      x: x ?? padding + 20,
-      y: y ?? padding + 20,
+      x: x ?? padding,
+      y: y ?? padding,
       width: 100,
       height: 200,
       content: content || '在此输入…',
