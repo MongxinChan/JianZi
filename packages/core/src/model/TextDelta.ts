@@ -657,105 +657,78 @@ export class TextDelta extends Delta {
         ctx.lineWidth = grid.lineWidth || 1;
         ctx.globalAlpha = grid.opacity || 0.3;
 
-        const layoutW = this.layoutConstraintW > 0 ? (this.layoutConstraintW + this.x) : areaWidth;
-        const layoutH = this.layoutConstraintH > 0 ? (this.layoutConstraintH + this.y) : areaHeight;
-        const layout = this._layout(ctx, mode, layoutW, layoutH);
-
         const isGrid = grid.type === 'grid';
 
         ctx.beginPath();
+
         if (mode === 'vertical') {
-            const cols = new Set<number>();
-            let defaultColW = this.fontSize + this.letterSpacing;
+            const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
+            const explicitGap = grid.gap !== undefined ? grid.gap : this.letterSpacing;
+            const drawColW = explicitSize + explicitGap;
 
-            for (const pos of layout.positions) {
-                if (pos.colWidth) {
-                    defaultColW = Math.max(defaultColW, pos.colWidth);
-                }
-                const colW = pos.colWidth || pos.width;
-                const boxWidth = this.layoutConstraintW > 0 ? this.layoutConstraintW : layout.totalWidth;
-                const rtlX = boxWidth - (pos.cx + colW);
-                const drawX = this.x + rtlX;
-                cols.add(drawX);
-                cols.add(drawX + colW);
-            }
+            const usableW = areaWidth - 2 * padding;
+            const maxCols = Math.floor(usableW / drawColW);
+            const actualGridW = maxCols * drawColW;
+            // For vertical text, grid starts from right side padding and grows leftward
+            const gridStartX = areaWidth - padding - actualGridW;
 
-            const colEdges = Array.from(cols).sort((a, b) => b - a);
+            // Height truncation (for 'grid' mode only)
+            const cellH = explicitSize + explicitGap;
+            const usableH = areaHeight - 2 * padding;
+            const maxRows = isGrid ? Math.floor(usableH / cellH) : 0;
+            const actualGridH = isGrid ? maxRows * cellH : usableH;
 
-            for (const x of colEdges) {
-                ctx.moveTo(x, padding);
-                ctx.lineTo(x, areaHeight - padding);
-            }
+            // Draw bounding box
+            ctx.rect(gridStartX, padding, actualGridW, actualGridH);
 
-            let rightmost = colEdges.length > 0 ? colEdges[0] : areaWidth - padding;
-            let currentX = rightmost + defaultColW;
-            while (currentX <= areaWidth - padding) {
+            let currentX = areaWidth - padding;
+            // Draw vertical column lines
+            for (let i = 0; i <= maxCols; i++) {
                 ctx.moveTo(currentX, padding);
-                ctx.lineTo(currentX, areaHeight - padding);
-                currentX += defaultColW;
-            }
-
-            let leftmost = colEdges.length > 0 ? colEdges[colEdges.length - 1] : areaWidth - padding;
-            currentX = leftmost - defaultColW;
-            while (currentX >= padding) {
-                ctx.moveTo(currentX, padding);
-                ctx.lineTo(currentX, areaHeight - padding);
-                currentX -= defaultColW;
+                ctx.lineTo(currentX, padding + actualGridH);
+                currentX -= drawColW;
             }
 
             if (isGrid) {
                 let currentY = padding;
-                const cellH = this.fontSize + this.letterSpacing;
-                while (currentY <= areaHeight - padding) {
-                    ctx.moveTo(padding, currentY);
-                    ctx.lineTo(areaWidth - padding, currentY);
+                for (let j = 0; j <= maxRows; j++) {
+                    ctx.moveTo(gridStartX, currentY);
+                    ctx.lineTo(gridStartX + actualGridW, currentY);
                     currentY += cellH;
                 }
             }
 
         } else {
-            const rows = new Set<number>();
-            let defaultRowH = this.fontSize * this.lineHeight;
+            const explicitSize = grid.size && grid.size > 0 ? grid.size : this.fontSize;
+            const explicitGap = grid.gap !== undefined ? grid.gap : (this.fontSize * (this.lineHeight - 1));
+            const drawRowH = explicitSize + explicitGap;
 
-            for (const pos of layout.positions) {
-                if (pos.rowHeight) {
-                    defaultRowH = Math.max(defaultRowH, pos.rowHeight);
-                }
-                const rowH = pos.rowHeight || pos.height;
-                const drawY = this.y + pos.cy;
-                rows.add(drawY);
-                rows.add(drawY + rowH);
-            }
+            const usableH = areaHeight - 2 * padding;
+            const maxRows = Math.floor(usableH / drawRowH);
+            const actualGridH = maxRows * drawRowH;
+            const gridStartY = padding;
 
-            const rowEdges = Array.from(rows).sort((a, b) => a - b);
+            // Width truncation (for 'grid' mode only)
+            const cellW = explicitSize + explicitGap;
+            const usableW = areaWidth - 2 * padding;
+            const maxCols = isGrid ? Math.floor(usableW / cellW) : 0;
+            const actualGridW = isGrid ? maxCols * cellW : usableW;
 
-            for (const y of rowEdges) {
-                ctx.moveTo(padding, y);
-                ctx.lineTo(areaWidth - padding, y);
-            }
+            // Draw bounding box
+            ctx.rect(padding, gridStartY, actualGridW, actualGridH);
 
-            let topmost = rowEdges.length > 0 ? rowEdges[0] : padding;
-            let currentY = topmost - defaultRowH;
-            while (currentY >= padding) {
+            let currentY = gridStartY;
+            for (let i = 0; i <= maxRows; i++) {
                 ctx.moveTo(padding, currentY);
-                ctx.lineTo(areaWidth - padding, currentY);
-                currentY -= defaultRowH;
-            }
-
-            let bottommost = rowEdges.length > 0 ? rowEdges[rowEdges.length - 1] : padding;
-            currentY = bottommost + defaultRowH;
-            while (currentY <= areaHeight - padding) {
-                ctx.moveTo(padding, currentY);
-                ctx.lineTo(areaWidth - padding, currentY);
-                currentY += defaultRowH;
+                ctx.lineTo(padding + actualGridW, currentY);
+                currentY += drawRowH;
             }
 
             if (isGrid) {
                 let currentX = padding;
-                const cellW = this.fontSize + this.letterSpacing;
-                while (currentX <= areaWidth - padding) {
-                    ctx.moveTo(currentX, padding);
-                    ctx.lineTo(currentX, areaHeight - padding);
+                for (let j = 0; j <= maxCols; j++) {
+                    ctx.moveTo(currentX, gridStartY);
+                    ctx.lineTo(currentX, gridStartY + actualGridH);
                     currentX += cellW;
                 }
             }

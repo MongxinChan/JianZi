@@ -17,6 +17,12 @@ export interface GridOptions {
 
   /** 线条透明度，建议 0.2 - 0.5 之间以保持素雅 */
   opacity?: number;
+
+  /** 网格大小（如果不指定，默认使用字号） */
+  size?: number;
+
+  /** 网格间隙（如果不指定，默认使用字间距） */
+  gap?: number;
 }
 
 /**

@@ -164,12 +164,28 @@ export class Editor {
   public setValue(val: string): void {
     if (this.inputManager) {
       this.inputManager.setValue(val);
-      // Trigger input event logic manually
       this.deltas.clear();
+
+      const padding = this.options.padding || 60;
+      let initX = padding;
+      let initY = padding;
+
+      if (this.options.mode === 'vertical') {
+        const grid = this.options.grid;
+        const explicitSize = grid?.size && grid.size > 0 ? grid.size : 28;
+        const explicitGap = grid?.gap !== undefined ? grid.gap : 2;
+        const drawColW = explicitSize + explicitGap;
+
+        const R = this.options.width - padding;
+        const drawableW = this.options.width - 2 * padding;
+        const maxCols = Math.floor(drawableW / drawColW);
+        initX = R - maxCols * drawColW;
+      }
+
       this.deltas.add(new TextDelta({
         id: 'main-text',
-        x: this.options.padding || 60,
-        y: this.options.padding || 60,
+        x: initX,
+        y: initY,
         width: 500,
         height: 500,
         type: 'text' as any,
@@ -207,11 +223,31 @@ export class Editor {
    */
   public addText(content?: string, x?: number, y?: number): void {
     const padding = this.options.padding || 60;
+
+    let initX = x;
+    let initY = y ?? padding;
+
+    if (x === undefined) {
+      if (this.options.mode === 'vertical') {
+        const grid = this.options.grid;
+        const explicitSize = grid?.size && grid.size > 0 ? grid.size : 28;
+        const explicitGap = grid?.gap !== undefined ? grid.gap : 2;
+        const drawColW = explicitSize + explicitGap;
+
+        const R = this.options.width - padding;
+        const drawableW = this.options.width - 2 * padding;
+        const maxCols = Math.floor(drawableW / drawColW);
+        initX = R - maxCols * drawColW;
+      } else {
+        initX = padding;
+      }
+    }
+
     const textDelta = new TextDelta({
       id: `text-${Date.now()}`,
       type: 'text' as any,
-      x: x ?? padding + 20,
-      y: y ?? padding + 20,
+      x: initX,
+      y: initY,
       width: 100,
       height: 200,
       content: content || '在此输入…',
