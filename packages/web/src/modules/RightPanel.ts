@@ -76,14 +76,14 @@ export function initRightPanel() {
     const gridGapInput = document.getElementById('grid-gap') as HTMLInputElement;
 
     function updateGridOptions() {
-        const currentGrid = jianzi.getOptions().grid || { type: 'line', color: '#cc0000', opacity: 0.2 };
+        const currentGrid = jianzi.getOptions().grid || { type: 'none', color: '#cc0000', opacity: 0.2 };
         const newSize = gridSizeInput?.value ? parseInt(gridSizeInput.value, 10) : undefined;
         const newGap = gridGapInput?.value ? parseInt(gridGapInput.value, 10) : undefined;
 
         jianzi.updateOptions({
             grid: {
                 ...currentGrid,
-                type: (gridTypeSelect?.value || 'line') as 'none' | 'line' | 'grid',
+                type: (gridTypeSelect?.value || 'none') as 'none' | 'line' | 'grid',
                 color: gridColorInput?.value || '#cc0000',
                 size: newSize,
                 gap: newGap

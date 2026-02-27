@@ -16,7 +16,7 @@ export const jianzi = new Editor({
     width: 500,
     height: 700,
     padding: 60,
-    grid: { type: 'line', color: '#cc0000', opacity: 0.2 },
+    grid: { type: 'none', color: '#cc0000', opacity: 0.2 },
     defaultFont: "'STKaiti', 'KaiTi', serif"
 });
 
